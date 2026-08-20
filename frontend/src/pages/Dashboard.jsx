@@ -36,7 +36,7 @@ export const Dashboard = () => {
     return (
       <div className="flex items-center justify-center h-64 text-[#9C9589] gap-3">
         <RefreshCw className="w-6 h-6 animate-spin text-[#697565]" />
-        <span>Carregando dados financeiros...</span>
+        <span>Carregando dados financeiros reais...</span>
       </div>
     );
   }
@@ -69,12 +69,15 @@ export const Dashboard = () => {
           totalExpenses={summary?.total_monthly_expenses || 0}
           categories={summary?.categories_breakdown || []}
         />
-        <CreditCardVisual />
+        <CreditCardVisual card={summary?.primary_card} />
       </div>
 
       {/* Second Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <CreditLimitCard usedLimit={176.94} totalLimit={5000} />
+        <CreditLimitCard
+          usedLimit={summary?.used_credit_limit || 0}
+          totalLimit={summary?.total_credit_limit || 0}
+        />
         <InstallmentsCard activeInstallmentsCount={summary?.active_installments_count || 0} />
         <CashFlowCard
           income={summary?.total_monthly_income || 0}
@@ -91,7 +94,7 @@ export const Dashboard = () => {
 
       {/* Third Row: Chart + Table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <EvolutionChart />
+        <EvolutionChart data={summary?.monthly_evolution || []} />
         <RecentTransactions transactions={summary?.recent_transactions || []} />
       </div>
     </div>

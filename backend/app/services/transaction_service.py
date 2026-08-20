@@ -48,7 +48,6 @@ def deleteTransaction(db: Session, tx_id: int):
     if not tx:
         return False
 
-    # Se a transação estiver ligada a uma conta, estorna o valor no saldo
     if tx.account_id:
         account = db.query(Account).filter(Account.id == tx.account_id).first()
         if account:
@@ -82,9 +81,25 @@ def getDashboardSummary(db: Session):
     )
     net_cash_flow = total_monthly_income - total_monthly_expenses
 
-    # 3. Contagem
+    # 3. Cartões de Crédito e Limite Reais
+    credit_cards = db.query(CreditCard).all()
     active_accounts_count = len(accounts)
-    active_cards_count = db.query(CreditCard).count()
+    active_cards_count = len(credit_cards)
+    total_credit_limit = sum(c.total_limit for c in credit_cards)
+    used_credit_limit = sum(c.used_limit for c in credit_cards)
+
+    primary_card = None
+    if credit_cards:
+        c = credit_cards[0]
+        primary_card = {
+            "name": c.name,
+            "last_four_digits": c.last_four_digits or "0000",
+            "used_limit": c.used_limit,
+            "total_limit": c.total_limit,
+            "due_day": c.due_day,
+            "closing_day": c.closing_day
+        }
+
     active_installments_count = db.query(Transaction).filter(Transaction.is_installment == True).count()
 
     # 4. Últimas 10 transações
@@ -107,6 +122,31 @@ def getDashboardSummary(db: Session):
         for row in cat_query
     ]
 
+    # 6. Evolução Mensal Real (últimos 6 meses)
+    monthly_evolution = []
+    month_names = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+    
+    for i in range(5, -1, -1):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        
+        m_txs = db.query(Transaction).filter(
+            extract('month', Transaction.date) == m,
+            extract('year', Transaction.date) == y
+        ).all()
+        
+        m_rec = sum(tx.amount for tx in m_txs if tx.type == TransactionType.INCOME)
+        m_desp = sum(tx.amount for tx in m_txs if tx.type in [TransactionType.EXPENSE, TransactionType.CARD_PURCHASE])
+        
+        monthly_evolution.append({
+            "mes": month_names[m - 1],
+            "Receitas": float(m_rec),
+            "Despesas": float(m_desp)
+        })
+
     return {
         "total_balance": total_balance,
         "total_monthly_expenses": total_monthly_expenses,
@@ -114,7 +154,11 @@ def getDashboardSummary(db: Session):
         "net_cash_flow": net_cash_flow,
         "active_accounts_count": active_accounts_count,
         "active_cards_count": active_cards_count,
+        "total_credit_limit": total_credit_limit,
+        "used_credit_limit": used_credit_limit,
+        "primary_card": primary_card,
         "active_installments_count": active_installments_count,
         "recent_transactions": recent_transactions,
-        "categories_breakdown": categories_breakdown
+        "categories_breakdown": categories_breakdown,
+        "monthly_evolution": monthly_evolution
     }

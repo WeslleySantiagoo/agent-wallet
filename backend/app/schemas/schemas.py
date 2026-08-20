@@ -122,9 +122,13 @@ class DashboardSummary(BaseModel):
     net_cash_flow: float
     active_accounts_count: int
     active_cards_count: int
+    total_credit_limit: float = 0.0
+    used_credit_limit: float = 0.0
+    primary_card: Optional[dict] = None
     active_installments_count: int
     recent_transactions: List[TransactionResponse]
     categories_breakdown: List[dict]
+    monthly_evolution: List[dict] = []
 
 # --- Chat Session & Message Schemas ---
 class ChatMessageResponse(BaseModel):

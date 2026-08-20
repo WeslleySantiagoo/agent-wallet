@@ -1,8 +1,8 @@
 import React from 'react';
 
-export const CreditLimitCard = ({ usedLimit = 0, totalLimit = 5000 }) => {
+export const CreditLimitCard = ({ usedLimit = 0, totalLimit = 0 }) => {
   const available = Math.max(0, totalLimit - usedLimit);
-  const percentage = Math.min(100, Math.round((usedLimit / totalLimit) * 100));
+  const percentage = totalLimit > 0 ? Math.min(100, Math.round((usedLimit / totalLimit) * 100)) : 0;
 
   // SVG Circular progress params
   const radius = 32;

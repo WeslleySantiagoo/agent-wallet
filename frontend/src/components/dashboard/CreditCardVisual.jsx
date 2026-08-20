@@ -1,12 +1,33 @@
 import React from 'react';
-import { CreditCard, Calendar } from 'lucide-react';
+import { CreditCard, Calendar, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const CreditCardVisual = ({ card }) => {
-  const cardName = card?.name || 'Visa Infinite';
-  const lastDigits = card?.last_four_digits || '9261';
-  const usedLimit = card?.used_limit || 176.94;
-  const totalLimit = card?.total_limit || 5000.0;
-  const dueDay = card?.due_day || 7;
+  if (!card) {
+    return (
+      <div className="card-glow p-5 h-44 flex flex-col justify-between bg-gradient-to-br from-[#3C3D37]/50 via-[#2A2E24]/50 to-[#181C14] border border-[#3C3D37] relative overflow-hidden">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold tracking-widest text-[#9C9589] uppercase">Cartão de Crédito</span>
+          <CreditCard className="w-5 h-5 text-[#9C9589]" />
+        </div>
+
+        <div>
+          <span className="text-[11px] text-[#9C9589]">Nenhum cartão cadastrado</span>
+          <h3 className="text-xl font-bold text-[#ECDFCC] mt-1">R$ 0,00</h3>
+        </div>
+
+        <div className="border-t border-[#3C3D37] pt-2 flex items-center justify-between text-[11px] text-[#9C9589]">
+          <span>Cadastre um cartão para gerenciar faturas</span>
+        </div>
+      </div>
+    );
+  }
+
+  const cardName = card.name;
+  const lastDigits = card.last_four_digits || '0000';
+  const usedLimit = card.used_limit || 0;
+  const totalLimit = card.total_limit || 0;
+  const dueDay = card.due_day || 1;
 
   return (
     <div className="card-glow p-5 h-44 flex flex-col justify-between bg-gradient-to-br from-[#3C3D37] via-[#2A2E24] to-[#181C14] border border-[#4A4B44] relative overflow-hidden group">
