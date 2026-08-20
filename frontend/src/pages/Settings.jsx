@@ -106,7 +106,12 @@ export const Settings = () => {
   }, [aiUsageStats, sortColumn, sortDirection]);
 
   const handleExport = () => {
-    window.open(exportDatabaseUrl, '_blank');
+    const link = document.createElement('a');
+    link.href = exportDatabaseUrl;
+    link.setAttribute('download', 'financas.db');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const processImportFile = async (file) => {
