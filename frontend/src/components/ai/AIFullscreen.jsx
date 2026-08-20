@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Send, Bot, RefreshCw, Plus, History, Trash2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Bot, RefreshCw, Plus, History, Trash2, MessageSquare } from 'lucide-react';
 import { useAIChat } from '../../context/AIChatContext';
 import { AIProviderSelector } from './AIProviderSelector';
 import { AIMessage } from './AIMessage';
+import { AIChatInputBar } from './AIChatInputBar';
 import { sendAIChat } from '../../services/api';
 
 export const AIFullscreen = () => {
@@ -13,30 +14,26 @@ export const AIFullscreen = () => {
     refreshSessionData
   } = useAIChat();
 
-  const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   if (!isChatOpen) return null;
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!inputText.trim() || isLoading) return;
+  const handleSendMessage = async (textToSend) => {
+    if (!textToSend.trim() || isLoading) return;
 
     const userMsg = {
       id: Date.now(),
       sender: 'user',
-      text: inputText.trim(),
+      text: textToSend.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMsg]);
-    const currentInput = inputText;
-    setInputText('');
     setIsLoading(true);
 
     try {
-      const res = await sendAIChat(currentInput, selectedProvider, selectedModel, activeSessionId);
+      await sendAIChat(textToSend.trim(), selectedProvider, selectedModel, activeSessionId);
       await refreshSessionData();
     } catch (err) {
       const errorMsg = {
@@ -131,25 +128,8 @@ export const AIFullscreen = () => {
         )}
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSend} className="p-3 border-t border-[#3C3D37] bg-[#1E2218]">
-        <div className="flex items-center gap-2 bg-[#3C3D37] rounded-xl p-2.5 border border-[#4A4B44]">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Digite aqui..."
-            className="flex-1 bg-transparent text-xs text-[#ECDFCC] placeholder-[#9C9589] outline-none"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !inputText.trim()}
-            className="p-2 rounded-lg bg-[#697565] text-[#ECDFCC] disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-      </form>
+      {/* Dynamic Input Bar */}
+      <AIChatInputBar onSend={handleSendMessage} isLoading={isLoading} />
     </div>
   );
 };

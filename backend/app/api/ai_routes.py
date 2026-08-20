@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Optional, List
 from sqlalchemy.orm import Session
@@ -94,6 +94,28 @@ def deleteSession(session_id: int, db: Session = Depends(getDb)):
         raise HTTPException(status_code=404, detail="Sessão de chat não encontrada")
     db.delete(session)
     db.commit()
+
+@router.post("/transcribe")
+async def transcribeAudio(
+    file: UploadFile = File(...),
+    provider_id: Optional[str] = Form(None),
+    model_id: Optional[str] = Form(None)
+):
+    audio_bytes = await file.read()
+    mime_type = file.content_type or "audio/webm"
+
+    # 1. Tenta transcrever com o agente do provedor/modelo selecionado
+    agent = provider_config.getAgent(provider_id, model_id)
+    try:
+        text = await agent.transcribeAudio(audio_bytes, mime_type)
+        return {"text": text}
+    except NotImplementedError:
+        # Fallback para Gemini
+        gemini_agent = provider_config.getAgent("Gemini", "gemini-2.5-flash")
+        text = await gemini_agent.transcribeAudio(audio_bytes, mime_type)
+        return {"text": text}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/chat", response_model=AgentResponse)
 async def processChat(req: ChatRequest, db: Session = Depends(getDb)):

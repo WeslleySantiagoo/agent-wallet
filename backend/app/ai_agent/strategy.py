@@ -21,3 +21,7 @@ class LLMAgent(ABC):
     async def processInput(self, user_text: str, context: Dict[str, Any]) -> AgentResponse:
         """Processa a mensagem do usuário, decide as tools e retorna resposta estruturada."""
         pass
+
+    async def transcribeAudio(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> str:
+        """Transcreve o áudio gravado enviando para o modelo de IA."""
+        raise NotImplementedError("Transcrição de áudio não suportada por este provedor.")

@@ -17,13 +17,20 @@ def updateProviders(new_config: Dict[str, Any]):
         if isinstance(models_dict, dict):
             curr_models = current_config.get(provider_name, {})
             for model_id, model_info in models_dict.items():
-                if isinstance(model_info, list) and len(model_info) >= 2:
-                    new_key = model_info[1]
-                    curr_info = curr_models.get(model_id, [None, False])
-                    curr_key = curr_info[1] if isinstance(curr_info, list) and len(curr_info) >= 2 else False
+                if isinstance(model_info, dict):
+                    new_key = model_info.get("api_key", False)
+                    curr_info = curr_models.get(model_id, {})
+                    curr_key = curr_info.get("api_key", False) if isinstance(curr_info, dict) else False
 
                     if isinstance(new_key, str) and "..." in new_key:
-                        model_info[1] = curr_key
+                        model_info["api_key"] = curr_key
+                elif isinstance(model_info, list) and len(model_info) >= 2:
+                    new_key = model_info[-1]
+                    curr_info = curr_models.get(model_id, [None, False])
+                    curr_key = curr_info[-1] if isinstance(curr_info, list) and len(curr_info) >= 2 else False
+
+                    if isinstance(new_key, str) and "..." in new_key:
+                        model_info[-1] = curr_key
 
     provider_config.saveProvidersConfig(new_config)
     return {"status": "success", "message": "Configurações de IA atualizadas com sucesso."}
@@ -32,7 +39,7 @@ def updateProviders(new_config: Dict[str, Any]):
 def getDefaultProvider():
     config = provider_config.loadProvidersConfig()
     first_provider = list(config.keys())[0] if config else "Gemini"
-    first_model = list(config[first_provider].keys())[0] if config and first_provider in config and config[first_provider] else "gemini-2.5-flash"
+    first_model = list(config[first_provider].keys())[0] if config and first_provider in config and config[first_provider] else "gemini-3.5-flash"
     return {
         "default_provider": first_provider,
         "default_model": first_model

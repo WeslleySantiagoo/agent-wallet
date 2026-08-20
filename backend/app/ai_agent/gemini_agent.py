@@ -16,6 +16,27 @@ class GeminiAgent(LLMAgent):
         else:
             self.client = None
 
+    async def transcribeAudio(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> str:
+        if not self.client:
+            raise Exception("Chave de API do Gemini não configurada em Configurações.")
+
+        try:
+            audio_part = types.Part.from_bytes(
+                data=audio_bytes,
+                mime_type=mime_type or "audio/webm"
+            )
+            prompt = (
+                "Transcreva este áudio com alta precisão em português (pt-BR). "
+                "Retorne APENAS a transcrição exata do que foi dito, sem comentários, sem explicações e sem aspas."
+            )
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=[prompt, audio_part]
+            )
+            return response.text.strip() if response.text else ""
+        except Exception as e:
+            raise Exception(f"Erro na transcrição via Gemini ({self.model_id}): {str(e)}")
+
     async def processInput(self, user_text: str, context: Dict[str, Any]) -> AgentResponse:
         db: Session = context.get("db")
         if not self.client:

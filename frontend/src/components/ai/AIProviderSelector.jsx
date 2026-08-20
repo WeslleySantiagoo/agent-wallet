@@ -37,10 +37,17 @@ export const AIProviderSelector = () => {
       <select
         value={selectedModel}
         onChange={(e) => setSelectedModel(e.target.value)}
-        className="bg-[#3C3D37] text-[#ECDFCC] text-xs font-medium rounded-lg px-2 py-1 outline-none border border-[#4A4B44] cursor-pointer max-w-[150px] truncate"
+        className="bg-[#3C3D37] text-[#ECDFCC] text-xs font-medium rounded-lg px-2 py-1 outline-none border border-[#4A4B44] cursor-pointer max-w-[170px] truncate"
       >
         {modelEntries.map(([mId, mData]) => {
-          const displayName = Array.isArray(mData) ? mData[0] : mId;
+          let displayName = mId;
+
+          if (typeof mData === 'object' && mData !== null && !Array.isArray(mData)) {
+            displayName = mData.name || mId;
+          } else if (Array.isArray(mData)) {
+            displayName = mData[0];
+          }
+
           return (
             <option key={mId} value={mId}>
               {displayName}

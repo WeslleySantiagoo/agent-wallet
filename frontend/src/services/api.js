@@ -38,6 +38,17 @@ export const deleteChatSession = (sessionId) => api.delete(`/ai/sessions/${sessi
 
 export const sendAIChat = (message, providerId, modelId, sessionId) => api.post('/ai/chat', { message, provider_id: providerId, model_id: modelId, session_id: sessionId }).then(res => res.data);
 
+export const transcribeAudioApi = (audioBlob, providerId, modelId) => {
+  const formData = new FormData();
+  formData.append('file', audioBlob, 'audio_recording.webm');
+  if (providerId) formData.append('provider_id', providerId);
+  if (modelId) formData.append('model_id', modelId);
+
+  return api.post('/ai/transcribe', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(res => res.data);
+};
+
 export const exportDatabaseUrl = `${API_BASE_URL}/export`;
 export const importDatabase = (file) => {
   const formData = new FormData();

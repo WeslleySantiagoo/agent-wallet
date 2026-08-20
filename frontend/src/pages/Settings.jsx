@@ -90,7 +90,25 @@ export const Settings = () => {
     setProvidersData(prev => {
       const updated = JSON.parse(JSON.stringify(prev));
       if (updated[providerName] && updated[providerName][modelId]) {
-        updated[providerName][modelId][1] = newKeyVal ? newKeyVal : false;
+        const item = updated[providerName][modelId];
+        if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+          item.api_key = newKeyVal ? newKeyVal : false;
+        } else if (Array.isArray(item)) {
+          item[item.length - 1] = newKeyVal ? newKeyVal : false;
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleInputTypeChange = (providerName, modelId, newTypeVal) => {
+    setProvidersData(prev => {
+      const updated = JSON.parse(JSON.stringify(prev));
+      if (updated[providerName] && updated[providerName][modelId]) {
+        const item = updated[providerName][modelId];
+        if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+          item.input_type = newTypeVal;
+        }
       }
       return updated;
     });
@@ -196,7 +214,7 @@ export const Settings = () => {
             </div>
             <div>
               <h2 className="text-sm font-bold text-[#ECDFCC]">Provedores e Modelos de IA</h2>
-              <p className="text-xs text-[#9C9589]">Modelado dinamicamente via arquivo local ai_providers.json</p>
+              <p className="text-xs text-[#9C9589]">Formato chave/valor com tipo de input (text, audio, multimodal)</p>
             </div>
           </div>
 
@@ -220,20 +238,50 @@ export const Settings = () => {
 
               <div className="space-y-3">
                 {Object.entries(modelsDict || {}).map(([modelId, modelData]) => {
-                  const displayName = Array.isArray(modelData) ? modelData[0] : modelId;
-                  const rawKey = Array.isArray(modelData) && lenCheck(modelData) ? modelData[1] : false;
+                  let displayName = modelId;
+                  let inputType = 'text';
+                  let rawKey = false;
+
+                  if (typeof modelData === 'object' && modelData !== null && !Array.isArray(modelData)) {
+                    displayName = modelData.name || modelId;
+                    inputType = modelData.input_type || 'text';
+                    rawKey = modelData.api_key;
+                  } else if (Array.isArray(modelData)) {
+                    displayName = modelData[0];
+                    rawKey = modelData[modelData.length - 1];
+                  }
+
                   const apiKeyVal = (typeof rawKey === 'string' && rawKey !== 'false') ? rawKey : '';
                   const uniqueKey = `${providerName}-${modelId}`;
 
                   return (
-                    <div key={modelId} className="bg-[#3C3D37]/40 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#4A4B44]/40">
+                    <div key={modelId} className="bg-[#3C3D37]/40 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 border border-[#4A4B44]/40">
                       <div>
-                        <p className="text-xs font-bold text-[#ECDFCC]">{displayName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-[#ECDFCC]">{displayName}</p>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#697565]/30 text-[#ECDFCC] border border-[#697565]">
+                            {inputType}
+                          </span>
+                        </div>
                         <span className="text-[10px] text-[#9C9589] font-mono">{modelId}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 w-full sm:w-80">
-                        <div className="flex-1 flex items-center bg-[#181C14] border border-[#4A4B44] rounded-xl px-3 py-2 focus-within:border-[#697565]">
+                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                        {/* Input Type Selector */}
+                        {typeof modelData === 'object' && !Array.isArray(modelData) && (
+                          <select
+                            value={inputType}
+                            onChange={(e) => handleInputTypeChange(providerName, modelId, e.target.value)}
+                            className="bg-[#181C14] text-[#ECDFCC] text-xs font-medium rounded-xl px-2 py-2 outline-none border border-[#4A4B44] cursor-pointer"
+                          >
+                            <option value="text">text</option>
+                            <option value="audio">audio</option>
+                            <option value="multimodal">multimodal</option>
+                          </select>
+                        )}
+
+                        {/* API Key Input */}
+                        <div className="flex-1 sm:w-64 flex items-center bg-[#181C14] border border-[#4A4B44] rounded-xl px-3 py-2 focus-within:border-[#697565]">
                           <input
                             type={showKeys[uniqueKey] ? 'text' : 'password'}
                             value={apiKeyVal}
@@ -261,7 +309,3 @@ export const Settings = () => {
     </div>
   );
 };
-
-function lenCheck(arr) {
-  return arr.length >= 2;
-}

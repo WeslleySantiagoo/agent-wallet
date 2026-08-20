@@ -7,14 +7,30 @@ PROVIDERS_FILE = os.path.join(settings.DATA_DIR, "ai_providers.json")
 
 DEFAULT_CONFIG = {
   "Gemini": {
-    "gemini-2.5-flash": ["Gemini 2.5 Flash", False],
-    "gemini-2.5-pro": ["Gemini 2.5 Pro", False]
+    "gemini-3.6-flash": {
+      "name": "Gemini 3.6 Flash",
+      "input_type": "multimodal",
+      "api_key": False
+    },
+    "gemini-2.5-flash": {
+      "name": "Gemini 2.5 Flash",
+      "input_type": "text",
+      "api_key": False
+    }
   },
   "Nvidia": {
-    "nvidia/llama-3.1-nemotron-70b-instruct": ["Nvidia Nemotron 70B", False]
+    "nvidia/nemotron-3-ultra-550b-a55b": {
+      "name": "Nvidia Nemotron 70B",
+      "input_type": "text",
+      "api_key": False
+    }
   },
   "Ollama": {
-    "llama3.1": ["LLaMA 3.1 (Local)", False]
+    "gemma4": {
+      "name": "Gemma 4",
+      "input_type": "text",
+      "api_key": False
+    }
   }
 }
 
@@ -42,10 +58,14 @@ def getMaskedProvidersConfig() -> Dict[str, Any]:
     for provider, models in masked.items():
         if isinstance(models, dict):
             for model_id, info in models.items():
-                if isinstance(info, list) and len(info) >= 2:
-                    key = info[1]
+                if isinstance(info, dict):
+                    key = info.get("api_key", False)
                     if isinstance(key, str) and key and key != "false":
-                        info[1] = key[:4] + "..." + key[-4:] if len(key) > 8 else "********"
+                        info["api_key"] = key[:4] + "..." + key[-4:] if len(key) > 8 else "********"
+                elif isinstance(info, list) and len(info) >= 2:  # Fallback retrocompativel
+                    key = info[-1]
+                    if isinstance(key, str) and key and key != "false":
+                        info[-1] = key[:4] + "..." + key[-4:] if len(key) > 8 else "********"
     return masked
 
 def getAgent(provider_id: str = None, model_id: str = None):
@@ -77,8 +97,14 @@ def getAgent(provider_id: str = None, model_id: str = None):
     elif models_dict:
         matched_model_id = list(models_dict.keys())[0]
 
-    model_info = models_dict.get(matched_model_id, ["Model", False])
-    raw_key = model_info[1] if isinstance(model_info, list) and len(model_info) >= 2 else False
+    model_info = models_dict.get(matched_model_id, {})
+    if isinstance(model_info, dict):
+        raw_key = model_info.get("api_key", False)
+    elif isinstance(model_info, list) and len(model_info) >= 2:
+        raw_key = model_info[-1]
+    else:
+        raw_key = False
+
     api_key = raw_key if isinstance(raw_key, str) and raw_key != "false" else ""
 
     p_lower = matched_provider_name.lower()
@@ -87,4 +113,4 @@ def getAgent(provider_id: str = None, model_id: str = None):
     elif "ollama" in p_lower:
         return OllamaAgent(model_id=matched_model_id or "llama3.1")
     else:
-        return GeminiAgent(api_key=api_key, model_id=matched_model_id or "gemini-2.5-flash")
+        return GeminiAgent(api_key=api_key, model_id=matched_model_id or "gemini-3.5-flash")
