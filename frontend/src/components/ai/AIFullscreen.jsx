@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Bot, RefreshCw, Plus, History, Trash2, MessageSquare } from 'lucide-react';
 import { useAIChat } from '../../context/AIChatContext';
-import { AIProviderSelector } from './AIProviderSelector';
 import { AIMessage } from './AIMessage';
 import { AIChatInputBar } from './AIChatInputBar';
 import { sendAIChat } from '../../services/api';
@@ -90,11 +89,6 @@ export const AIFullscreen = () => {
             <Plus className="w-4 h-4" />
           </button>
         </div>
-      </div>
-
-      {/* Provider Selector Row */}
-      <div className="p-2 border-b border-[#3C3D37] bg-[#181C14]">
-        <AIProviderSelector />
       </div>
 
       {/* History Drawer Mobile */}

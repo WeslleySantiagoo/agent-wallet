@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Bot, RefreshCw, Plus, History, Trash2, MessageSquare } from 'lucide-react';
 import { useAIChat } from '../../context/AIChatContext';
-import { AIProviderSelector } from './AIProviderSelector';
 import { AIMessage } from './AIMessage';
 import { AIChatInputBar } from './AIChatInputBar';
 import { sendAIChat } from '../../services/api';
@@ -128,11 +127,6 @@ export const AISidebar = () => {
             <X className="w-4 h-4" />
           </button>
         </div>
-      </div>
-
-      {/* Provider Selector Row */}
-      <div className="p-2.5 border-b border-[#3C3D37] bg-[#181C14]/50">
-        <AIProviderSelector />
       </div>
 
       {/* Sessions History Drawer (Collapsible) */}

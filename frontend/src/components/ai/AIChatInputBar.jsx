@@ -3,6 +3,7 @@ import { Send, Mic, MicOff, Plus, FileText, Image as ImageIcon, X, RefreshCw } f
 import { useAIChat } from '../../context/AIChatContext';
 import { transcribeAudioApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { AIProviderSelector } from './AIProviderSelector';
 
 export const AIChatInputBar = ({ onSend, isLoading }) => {
   const { toast } = useToast();
@@ -135,7 +136,11 @@ export const AIChatInputBar = ({ onSend, isLoading }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-3 border-t border-[#3C3D37] bg-[#181C14] space-y-2">
+    <form onSubmit={handleSubmit} className="p-3 border-t border-[#3C3D37] bg-[#181C14] space-y-2 relative">
+      {/* Selector Dropup de Modelo posicionado exatamente em cima da caixa de input */}
+      <div className="flex items-center justify-between pb-0.5">
+        <AIProviderSelector />
+      </div>
       {/* Badge de Anexo de Arquivo no formato multimodal */}
       {selectedFile && (
         <div className="flex items-center justify-between bg-[#3C3D37] px-3 py-1.5 rounded-xl border border-[#4A4B44] text-xs text-[#ECDFCC]">
