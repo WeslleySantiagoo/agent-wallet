@@ -51,7 +51,83 @@ body {
   border-radius: 16px;
   transition: all 0.2s ease-in-out;
 }
-.card-glow:hover {
-  box-shadow: 0 0 20px rgba(105, 117, 101, 0.15);
-  transform: translateY(-2px);
+
+/* Custom Keyframe Animations para Dropdowns e Dropups (Suave e Lento) */
+@keyframes dropdownEnter {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+@keyframes dropdownOut {
+  from {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(-10px);
+  }
+}
+
+@keyframes dropupEnter {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+@keyframes dropupOut {
+  from {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(10px);
+  }
+}
+
+.animate-dropdown-enter {
+  transform-origin: top center;
+  animation: dropdownEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-dropdown-out {
+  transform-origin: top center;
+  animation: dropdownOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-dropup-enter {
+  transform-origin: bottom center;
+  animation: dropupEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-dropup-out {
+  transform-origin: bottom center;
+  animation: dropupOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Transição de Altura Suave via CSS Grid para Seções Expansíveis/Accordions */
+.accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-content.is-open {
+  grid-template-rows: 1fr;
+}
+
+.accordion-body {
+  overflow: hidden;
 }

@@ -1,8 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { exportDatabaseUrl, importDatabase, getAIProviders, updateAIProviders, getAIUsageStats, resetDatabaseApi } from '../services/api';
-import { Download, Upload, Cpu, Eye, EyeOff, Save, CheckCircle2, ShieldCheck, FileSpreadsheet, AlertTriangle, Activity, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw } from 'lucide-react';
+import { Download, Upload, Cpu, Eye, EyeOff, Save, CheckCircle2, ShieldCheck, FileSpreadsheet, AlertTriangle, Activity, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
 import { useToast } from '../context/ToastContext';
+import { CustomSelect } from '../components/common/CustomSelect';
+
+// Componente Helper de Transição de Altura Suave via CSS Grid
+const CollapsibleSection = ({ isOpen, children, className = '' }) => {
+  return (
+    <div className={`grid transition-all duration-500 ease-in-out ${
+      isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+    }`}>
+      <div className="overflow-hidden">
+        <div className={className}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const Settings = () => {
   const { toast } = useToast();
@@ -245,7 +261,7 @@ export const Settings = () => {
             </div>
             <button
               onClick={handleExport}
-              className="mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-semibold border border-[#4A4B44] transition-colors"
+              className="mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-semibold border border-[#4A4B44] transition-colors cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>Exportar .db</span>
@@ -310,7 +326,7 @@ export const Settings = () => {
             onClick={loadUsageStats}
             disabled={isUsageLoading}
             title="Recarregar estatísticas de uso"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-medium border border-[#4A4B44] transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-medium border border-[#4A4B44] transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${isUsageLoading ? 'animate-spin text-[#697565]' : ''}`} />
             <span className="hidden sm:inline">Atualizar</span>
@@ -343,68 +359,68 @@ export const Settings = () => {
             <div className="bg-[#181C14] border border-[#3C3D37] rounded-xl overflow-hidden">
               <button 
                 onClick={() => setUsageExpanded(!usageExpanded)}
-                className="w-full p-4 flex items-center justify-between hover:bg-[#3C3D37]/40 transition-colors"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#3C3D37]/40 transition-colors cursor-pointer"
               >
                 <span className="text-xs font-bold text-[#ECDFCC]">Uso Detalhado por Modelo</span>
-                {usageExpanded ? <ChevronUp className="w-4 h-4 text-[#9C9589]" /> : <ChevronDown className="w-4 h-4 text-[#9C9589]" />}
+                <ChevronDown 
+                  className={`w-4 h-4 text-[#9C9589] transition-transform duration-500 ${usageExpanded ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
+                />
               </button>
 
-              {usageExpanded && (
-                <div className="border-t border-[#3C3D37] p-4 overflow-x-auto">
-                  <table className="w-full text-left text-xs text-[#9C9589] min-w-[700px]">
-                    <thead className="border-b border-[#3C3D37]">
-                      <tr>
-                        {[
-                          { key: 'provider', label: 'Provedor' },
-                          { key: 'model', label: 'Modelo' },
-                          { key: 'requests', label: 'Requisições' },
-                          { key: 'input_tokens', label: 'In Tokens' },
-                          { key: 'output_tokens', label: 'Out Tokens' },
-                          { key: 'total_tokens', label: 'Total Tokens' },
-                          { key: 'rpm', label: 'RPM' },
-                          { key: 'tpm', label: 'TPM' },
-                          { key: 'rpd', label: 'RPD' }
-                        ].map((col) => (
-                          <th 
-                            key={col.key} 
-                            className="p-2 cursor-pointer hover:text-[#ECDFCC] transition-colors whitespace-nowrap"
-                            onClick={() => handleSort(col.key)}
-                          >
-                            <div className="flex items-center gap-1">
-                              {col.label}
-                              {sortColumn === col.key ? (
-                                sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />
-                              ) : (
-                                <ArrowUpDown className="w-3 h-3 opacity-30" />
-                              )}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedModels.map((m, idx) => (
-                        <tr key={idx} className="border-b border-[#3C3D37]/40 hover:bg-[#3C3D37]/20 transition-colors">
-                          <td className="p-2 font-semibold text-[#ECDFCC]">{m.provider}</td>
-                          <td className="p-2 font-mono text-[10px]">{m.model}</td>
-                          <td className="p-2">{m.requests}</td>
-                          <td className="p-2 text-[#4CAF50]">{m.input_tokens?.toLocaleString()}</td>
-                          <td className="p-2 text-[#2196F3]">{m.output_tokens?.toLocaleString()}</td>
-                          <td className="p-2 font-semibold text-[#ECDFCC]">{m.total_tokens?.toLocaleString()}</td>
-                          <td className="p-2">{m.rpm}</td>
-                          <td className="p-2">{m.tpm?.toLocaleString()}</td>
-                          <td className="p-2">{m.rpd}</td>
-                        </tr>
+              <CollapsibleSection isOpen={usageExpanded} className="p-4 pt-0 border-t border-[#3C3D37] overflow-x-auto">
+                <table className="w-full text-left text-xs text-[#9C9589] min-w-[700px] mt-4">
+                  <thead className="border-b border-[#3C3D37]">
+                    <tr>
+                      {[
+                        { key: 'provider', label: 'Provedor' },
+                        { key: 'model', label: 'Modelo' },
+                        { key: 'requests', label: 'Requisições' },
+                        { key: 'input_tokens', label: 'In Tokens' },
+                        { key: 'output_tokens', label: 'Out Tokens' },
+                        { key: 'total_tokens', label: 'Total Tokens' },
+                        { key: 'rpm', label: 'RPM' },
+                        { key: 'tpm', label: 'TPM' },
+                        { key: 'rpd', label: 'RPD' }
+                      ].map((col) => (
+                        <th 
+                          key={col.key} 
+                          className="p-2 cursor-pointer hover:text-[#ECDFCC] transition-colors whitespace-nowrap"
+                          onClick={() => handleSort(col.key)}
+                        >
+                          <div className="flex items-center gap-1">
+                            {col.label}
+                            {sortColumn === col.key ? (
+                              sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
                       ))}
-                      {sortedModels.length === 0 && (
-                        <tr>
-                          <td colSpan="9" className="p-4 text-center text-xs opacity-50">Nenhum uso registrado.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedModels.map((m, idx) => (
+                      <tr key={idx} className="border-b border-[#3C3D37]/40 hover:bg-[#3C3D37]/20 transition-colors">
+                        <td className="p-2 font-semibold text-[#ECDFCC]">{m.provider}</td>
+                        <td className="p-2 font-mono text-[10px]">{m.model}</td>
+                        <td className="p-2">{m.requests}</td>
+                        <td className="p-2 text-[#4CAF50]">{m.input_tokens?.toLocaleString()}</td>
+                        <td className="p-2 text-[#2196F3]">{m.output_tokens?.toLocaleString()}</td>
+                        <td className="p-2 font-semibold text-[#ECDFCC]">{m.total_tokens?.toLocaleString()}</td>
+                        <td className="p-2">{m.rpm}</td>
+                        <td className="p-2">{m.tpm?.toLocaleString()}</td>
+                        <td className="p-2">{m.rpd}</td>
+                      </tr>
+                    ))}
+                    {sortedModels.length === 0 && (
+                      <tr>
+                        <td colSpan="9" className="p-4 text-center text-xs opacity-50">Nenhum uso registrado.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </CollapsibleSection>
             </div>
           </>
         ) : (
@@ -428,7 +444,7 @@ export const Settings = () => {
           <button
             onClick={handleSaveAIConfig}
             disabled={savingConfig}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] transition-all shadow-md"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] transition-all shadow-md cursor-pointer"
           >
             {saveSuccess ? <CheckCircle2 className="w-4 h-4 text-[#4CAF50]" /> : <Save className="w-4 h-4" />}
             <span>{savingConfig ? 'Salvando...' : saveSuccess ? 'Salvo!' : 'Salvar Configurações'}</span>
@@ -437,7 +453,6 @@ export const Settings = () => {
 
         <div className="space-y-3">
           {Object.entries(providersData || {}).map(([providerName, modelsDict]) => {
-            // DEFAULT COLLAPSED unless explicitly toggled to true
             const isExpanded = expandedProviders[providerName] ?? false;
             const modelsCount = Object.keys(modelsDict || {}).length;
 
@@ -456,79 +471,79 @@ export const Settings = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-[#697565] uppercase tracking-wider font-mono hidden sm:inline">{providerName}</span>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-[#9C9589]" /> : <ChevronDown className="w-4 h-4 text-[#9C9589]" />}
+                    <ChevronDown 
+                      className={`w-4 h-4 text-[#9C9589] transition-transform duration-500 ${isExpanded ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
+                    />
                   </div>
                 </div>
 
-                {/* Expandable Content */}
-                {isExpanded && (
-                  <div className="p-4 pt-0 border-t border-[#3C3D37]/50 space-y-3 mt-3">
-                    {Object.entries(modelsDict || {}).map(([modelId, modelData]) => {
-                      let displayName = modelId;
-                      let inputType = 'text';
-                      let rawKey = false;
+                {/* Expandable Content com animação de altura CSS Grid */}
+                <CollapsibleSection isOpen={isExpanded} className="p-4 pt-0 border-t border-[#3C3D37]/50 space-y-3 mt-3">
+                  {Object.entries(modelsDict || {}).map(([modelId, modelData]) => {
+                    let displayName = modelId;
+                    let inputType = 'text';
+                    let rawKey = false;
 
-                      if (typeof modelData === 'object' && modelData !== null && !Array.isArray(modelData)) {
-                        displayName = modelData.name || modelId;
-                        inputType = modelData.input_type || 'text';
-                        rawKey = modelData.api_key;
-                      } else if (Array.isArray(modelData)) {
-                        displayName = modelData[0];
-                        rawKey = modelData[modelData.length - 1];
-                      }
+                    if (typeof modelData === 'object' && modelData !== null && !Array.isArray(modelData)) {
+                      displayName = modelData.name || modelId;
+                      inputType = modelData.input_type || 'text';
+                      rawKey = modelData.api_key;
+                    } else if (Array.isArray(modelData)) {
+                      displayName = modelData[0];
+                      rawKey = modelData[modelData.length - 1];
+                    }
 
-                      const apiKeyVal = (typeof rawKey === 'string' && rawKey !== 'false') ? rawKey : '';
-                      const uniqueKey = `${providerName}-${modelId}`;
+                    const apiKeyVal = (typeof rawKey === 'string' && rawKey !== 'false') ? rawKey : '';
+                    const uniqueKey = `${providerName}-${modelId}`;
 
-                      return (
-                        <div key={modelId} className="bg-[#3C3D37]/40 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 border border-[#4A4B44]/40">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-bold text-[#ECDFCC]">{displayName}</p>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#697565]/30 text-[#ECDFCC] border border-[#697565]">
-                                {inputType}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-[#9C9589] font-mono">{modelId}</span>
+                    return (
+                      <div key={modelId} className="bg-[#3C3D37]/40 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 border border-[#4A4B44]/40">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-[#ECDFCC]">{displayName}</p>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#697565]/30 text-[#ECDFCC] border border-[#697565]">
+                              {inputType}
+                            </span>
                           </div>
+                          <span className="text-[10px] text-[#9C9589] font-mono">{modelId}</span>
+                        </div>
 
-                          <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
-                            {/* Input Type Selector */}
-                            {typeof modelData === 'object' && !Array.isArray(modelData) && (
-                              <select
-                                value={inputType}
-                                onChange={(e) => handleInputTypeChange(providerName, modelId, e.target.value)}
-                                className="bg-[#181C14] text-[#ECDFCC] text-xs font-medium rounded-xl px-2 py-2 outline-none border border-[#4A4B44] cursor-pointer"
-                              >
-                                <option value="text">text</option>
-                                <option value="audio">audio</option>
-                                <option value="multimodal">multimodal</option>
-                              </select>
-                            )}
+                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                          {/* Custom Select Dropdown no lugar do select nativo */}
+                          {typeof modelData === 'object' && !Array.isArray(modelData) && (
+                            <CustomSelect
+                              value={inputType}
+                              onChange={(newVal) => handleInputTypeChange(providerName, modelId, newVal)}
+                              options={[
+                                { value: 'text', label: 'text' },
+                                { value: 'audio', label: 'audio' },
+                                { value: 'multimodal', label: 'multimodal' }
+                              ]}
+                            />
+                          )}
 
-                            {/* API Key Input */}
-                            <div className="flex-1 sm:w-64 flex items-center bg-[#181C14] border border-[#4A4B44] rounded-xl px-3 py-2 focus-within:border-[#697565]">
-                              <input
-                                type={showKeys[uniqueKey] ? 'text' : 'password'}
-                                value={apiKeyVal}
-                                onChange={(e) => handleApiKeyChange(providerName, modelId, e.target.value)}
-                                placeholder="Insira a API Key"
-                                className="w-full bg-transparent text-xs text-[#ECDFCC] outline-none placeholder-[#9C9589]"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => toggleKeyVisibility(uniqueKey)}
-                                className="text-[#9C9589] hover:text-[#ECDFCC] ml-2"
-                              >
-                                {showKeys[uniqueKey] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </button>
-                            </div>
+                          {/* API Key Input */}
+                          <div className="flex-1 sm:w-64 flex items-center bg-[#181C14] border border-[#4A4B44] rounded-xl px-3 py-2 focus-within:border-[#697565]">
+                            <input
+                              type={showKeys[uniqueKey] ? 'text' : 'password'}
+                              value={apiKeyVal}
+                              onChange={(e) => handleApiKeyChange(providerName, modelId, e.target.value)}
+                              placeholder="Insira a API Key"
+                              className="w-full bg-transparent text-xs text-[#ECDFCC] outline-none placeholder-[#9C9589]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleKeyVisibility(uniqueKey)}
+                              className="text-[#9C9589] hover:text-[#ECDFCC] ml-2 cursor-pointer"
+                            >
+                              {showKeys[uniqueKey] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
+                    );
+                  })}
+                </CollapsibleSection>
               </div>
             );
           })}
@@ -540,7 +555,7 @@ export const Settings = () => {
         <button
           type="button"
           onClick={() => setShowDangerZone(!showDangerZone)}
-          className="w-full p-4 flex items-center justify-between text-left hover:bg-[#E57373]/5 transition-colors"
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-[#E57373]/5 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-4 h-4 text-[#E57373]" />
@@ -549,38 +564,38 @@ export const Settings = () => {
               <p className="text-[11px] text-[#9C9589]">Opções avançadas de sistema e redefinição total de dados</p>
             </div>
           </div>
-          {showDangerZone ? <ChevronUp className="w-4 h-4 text-[#9C9589]" /> : <ChevronDown className="w-4 h-4 text-[#9C9589]" />}
+          <ChevronDown 
+            className={`w-4 h-4 text-[#9C9589] transition-transform duration-500 ${showDangerZone ? 'rotate-180 text-[#E57373]' : 'rotate-0'}`} 
+          />
         </button>
 
-        {showDangerZone && (
-          <div className="p-4 border-t border-[#E57373]/20 bg-[#E57373]/5 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#181C14] p-4 rounded-xl border border-[#E57373]/30">
-              <div>
-                <h4 className="text-xs font-bold text-[#ECDFCC]">Resetar Todo o Banco de Dados Local</h4>
-                <p className="text-[11px] text-[#9C9589] mt-0.5">
-                  Apaga de forma irreversível todas as suas contas, cartões, faturas, lançamentos e histórico de IA.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmResetInput('');
-                  setShowResetModal(true);
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#E57373]/20 hover:bg-[#E57373]/40 text-[#E57373] text-xs font-semibold border border-[#E57373]/50 transition-colors shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Resetar Banco</span>
-              </button>
+        <CollapsibleSection isOpen={showDangerZone} className="p-4 border-t border-[#E57373]/20 bg-[#E57373]/5 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#181C14] p-4 rounded-xl border border-[#E57373]/30 mt-3">
+            <div>
+              <h4 className="text-xs font-bold text-[#ECDFCC]">Resetar Todo o Banco de Dados Local</h4>
+              <p className="text-[11px] text-[#9C9589] mt-0.5">
+                Apaga de forma irreversível todas as suas contas, cartões, faturas, lançamentos e histórico de IA.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmResetInput('');
+                setShowResetModal(true);
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#E57373]/20 hover:bg-[#E57373]/40 text-[#E57373] text-xs font-semibold border border-[#E57373]/50 transition-colors shrink-0 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Resetar Banco</span>
+            </button>
           </div>
-        )}
+        </CollapsibleSection>
       </section>
 
       {/* Sensitive Reset Database Modal Confirmation */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#181C14] border border-[#E57373]/50 rounded-2xl p-6 max-w-md w-full space-y-5 shadow-2xl">
+          <div className="bg-[#181C14] border border-[#E57373]/50 rounded-2xl p-6 max-w-md w-full space-y-5 shadow-2xl transition-all duration-300 transform scale-100">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-[#E57373]/20 flex items-center justify-center text-[#E57373]">
                 <AlertTriangle className="w-6 h-6" />
@@ -612,7 +627,7 @@ export const Settings = () => {
               <button
                 type="button"
                 onClick={() => setShowResetModal(false)}
-                className="px-4 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-semibold transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -620,7 +635,7 @@ export const Settings = () => {
                 type="button"
                 disabled={confirmResetInput.trim().toUpperCase() !== 'RESETAR' || resetting}
                 onClick={handleResetDatabase}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E57373] hover:bg-[#D32F2F] disabled:opacity-40 text-white text-xs font-semibold transition-colors shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E57373] hover:bg-[#D32F2F] disabled:opacity-40 text-white text-xs font-semibold transition-colors shadow-lg cursor-pointer"
               >
                 {resetting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 <span>{resetting ? 'Resetando...' : 'Confirmar Reset'}</span>
