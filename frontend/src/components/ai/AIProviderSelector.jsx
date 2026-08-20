@@ -38,7 +38,7 @@ export const AIProviderSelector = () => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-none text-[#ECDFCC] px-3 py-1.5 rounded-xl hover:border-[#697565]/60 transition-all text-xs cursor-pointer"
+        className="flex items-center gap-2 bg-none text-[#ECDFCC] px-3 py-1.5 rounded-xl hover:scale-102 transition-transform text-xs cursor-pointer"
       >
         <Sparkles className="w-3.5 h-3.5 text-[#697565]" />
         <span className="font-semibold">{currentDisplayName}</span>
@@ -47,7 +47,7 @@ export const AIProviderSelector = () => {
           {currentInputType}
         </span>
         {isOpen ? (
-          <ChevronDown className="w-3.5 h-3.5 text-[#9C9589] ml-1" />
+          <ChevronDown className="w-3.5 h-3.5 text-[#9C9589] ml-1 transitio" />
         ) : (
           <ChevronUp className="w-3.5 h-3.5 text-[#9C9589] ml-1" />
         )}
@@ -97,8 +97,8 @@ export const AIProviderSelector = () => {
                         }}
                         className={`flex items-center justify-between p-2 rounded-xl text-xs cursor-pointer transition-colors ${
                           isSelected
-                            ? 'bg-[#697565]/30 border border-[#697565] text-[#ECDFCC]'
-                            : 'bg-[#3C3D37]/30 hover:bg-[#3C3D37] text-[#9C9589] hover:text-[#ECDFCC]'
+                            ? 'bg-[#697565]/30 border border-[#697565] text-[#ECDFCC] hover:scale-102 transition-transform'
+                            : 'bg-none hover:scale-102 transition-transform text-[#9C9589] hover:text-[#ECDFCC]'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate pr-2">
