@@ -37,6 +37,7 @@ export const activateChatSession = (sessionId) => api.post(`/ai/sessions/${sessi
 export const deleteChatSession = (sessionId) => api.delete(`/ai/sessions/${sessionId}`);
 
 export const sendAIChat = (message, providerId, modelId, sessionId) => api.post('/ai/chat', { message, provider_id: providerId, model_id: modelId, session_id: sessionId }).then(res => res.data);
+export const getAIUsageStats = () => api.get('/ai/usage').then(res => res.data);
 
 export const transcribeAudioApi = (audioBlob, providerId, modelId) => {
   const formData = new FormData();
@@ -57,5 +58,6 @@ export const importDatabase = (file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   }).then(res => res.data);
 };
+export const resetDatabaseApi = () => api.post('/reset').then(res => res.data);
 
 export default api;

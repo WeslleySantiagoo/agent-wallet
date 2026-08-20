@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Bot, RefreshCw, Plus, History, Trash2, MessageSquare } from 'lucide-react';
 import { useAIChat } from '../../context/AIChatContext';
 import { AIProviderSelector } from './AIProviderSelector';
@@ -16,6 +16,17 @@ export const AIFullscreen = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+  };
+
+  useEffect(() => {
+    if (isChatOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isChatOpen]);
 
   if (!isChatOpen) return null;
 
@@ -126,6 +137,7 @@ export const AIFullscreen = () => {
             <span>Processando...</span>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Dynamic Input Bar */}

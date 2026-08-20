@@ -46,10 +46,17 @@ class OllamaAgent(LLMAgent):
                         if chart:
                             charts.append(chart)
 
+                in_tok = data.get("prompt_eval_count", 0)
+                out_tok = data.get("eval_count", 0)
+                tot_tok = in_tok + out_tok
+
                 return AgentResponse(
                     message=final_message or "Processado com sucesso via Ollama.",
                     actions_executed=actions_executed,
-                    charts=charts
+                    charts=charts,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    total_tokens=tot_tok
                 )
             except Exception as e:
                 return AgentResponse(message=f"Não foi possível conectar ao Ollama local: {str(e)}")

@@ -13,6 +13,9 @@ class AgentResponse(BaseModel):
     message: str
     actions_executed: List[Dict[str, Any]] = []
     charts: List[ChartData] = []
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
 
 class LLMAgent(ABC):
     """Interface abstrata (Strategy Pattern) para agentes de IA."""
@@ -22,6 +25,6 @@ class LLMAgent(ABC):
         """Processa a mensagem do usuário, decide as tools e retorna resposta estruturada."""
         pass
 
-    async def transcribeAudio(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> str:
+    async def transcribeAudio(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> tuple[str, int, int, int]:
         """Transcreve o áudio gravado enviando para o modelo de IA."""
         raise NotImplementedError("Transcrição de áudio não suportada por este provedor.")

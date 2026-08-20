@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff, Plus, FileText, Image as ImageIcon, X, RefreshCw } from 'lucide-react';
 import { useAIChat } from '../../context/AIChatContext';
 import { transcribeAudioApi } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 export const AIChatInputBar = ({ onSend, isLoading }) => {
+  const { toast } = useToast();
   const { selectedProvider, selectedModel, providersData } = useAIChat();
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -91,7 +93,7 @@ export const AIChatInputBar = ({ onSend, isLoading }) => {
           }
         } catch (err) {
           console.error("Erro ao enviar áudio para transcrição via IA:", err);
-          alert(`Erro na transcrição via IA: ${err.response?.data?.detail || err.message}`);
+          toast.error(`Erro na transcrição via IA: ${err.response?.data?.detail || err.message}`);
         } finally {
           setIsTranscribing(false);
         }
@@ -101,7 +103,7 @@ export const AIChatInputBar = ({ onSend, isLoading }) => {
       setIsListening(true);
     } catch (e) {
       console.error("Erro ao acessar microfone:", e);
-      alert("Não foi possível acessar o microfone. Verifique as permissões no navegador.");
+      toast.error("Não foi possível acessar o microfone. Verifique as permissões no navegador.");
       setIsListening(false);
       setIsTranscribing(false);
     }

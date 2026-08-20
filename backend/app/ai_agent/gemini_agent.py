@@ -16,7 +16,7 @@ class GeminiAgent(LLMAgent):
         else:
             self.client = None
 
-    async def transcribeAudio(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> str:
+    async def transcribeAudio(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> tuple[str, int, int, int]:
         if not self.client:
             raise Exception("Chave de API do Gemini não configurada em Configurações.")
 
@@ -33,7 +33,11 @@ class GeminiAgent(LLMAgent):
                 model=self.model_id,
                 contents=[prompt, audio_part]
             )
-            return response.text.strip() if response.text else ""
+            input_tokens = getattr(response.usage_metadata, "prompt_token_count", 0) if getattr(response, "usage_metadata", None) else 0
+            output_tokens = getattr(response.usage_metadata, "candidates_token_count", 0) if getattr(response, "usage_metadata", None) else 0
+            total_tokens = getattr(response.usage_metadata, "total_token_count", 0) if getattr(response, "usage_metadata", None) else 0
+            
+            return response.text.strip() if response.text else "", input_tokens, output_tokens, total_tokens
         except Exception as e:
             raise Exception(f"Erro na transcrição via Gemini ({self.model_id}): {str(e)}")
 
@@ -98,10 +102,17 @@ class GeminiAgent(LLMAgent):
             if not final_message and actions_executed:
                 final_message = f"Entendido! {actions_executed[0].get('message', 'Ação registrada com sucesso.')}"
 
+            input_tokens = getattr(response.usage_metadata, "prompt_token_count", 0) if getattr(response, "usage_metadata", None) else 0
+            output_tokens = getattr(response.usage_metadata, "candidates_token_count", 0) if getattr(response, "usage_metadata", None) else 0
+            total_tokens = getattr(response.usage_metadata, "total_token_count", 0) if getattr(response, "usage_metadata", None) else 0
+
             return AgentResponse(
                 message=final_message or "Ação concluída com sucesso.",
                 actions_executed=actions_executed,
-                charts=charts
+                charts=charts,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens
             )
 
         except Exception as e:

@@ -155,3 +155,24 @@ class ChatSessionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- AI Usage Schemas ---
+class AIUsageModelDetails(BaseModel):
+    provider: str
+    model: str
+    requests: int
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    rpm: float
+    tpm: float
+    rpd: float
+
+class AIUsageSummary(BaseModel):
+    total_requests: int
+    total_requests_today: int
+    total_tokens: int
+    global_rpm: float
+    global_tpm: float
+    global_rpd: float
+    models: List[AIUsageModelDetails] = []

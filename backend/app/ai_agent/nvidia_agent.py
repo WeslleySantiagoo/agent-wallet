@@ -62,10 +62,18 @@ class NvidiaAgent(LLMAgent):
                         if chart:
                             charts.append(chart)
 
+                usage = data.get("usage", {})
+                in_tok = usage.get("prompt_tokens", 0)
+                out_tok = usage.get("completion_tokens", 0)
+                tot_tok = usage.get("total_tokens", 0)
+
                 return AgentResponse(
                     message=final_message or "Processado com sucesso.",
                     actions_executed=actions_executed,
-                    charts=charts
+                    charts=charts,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    total_tokens=tot_tok
                 )
             except Exception as e:
                 return AgentResponse(message=f"Erro ao comunicar com Nvidia API: {str(e)}")

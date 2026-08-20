@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getAccounts, createAccount, deleteAccount } from '../services/api';
 import { Plus, Trash2, Wallet, Building, RefreshCw } from 'lucide-react';
 
+import { useToast } from '../context/ToastContext';
+
 export const Accounts = () => {
+  const { toast } = useToast();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -30,19 +33,20 @@ export const Accounts = () => {
       await createAccount({ ...form, balance: parseFloat(form.balance) });
       setShowModal(false);
       setForm({ name: '', institution: '', balance: 0, type: 'CHECKING' });
+      toast.success("Conta criada com sucesso!");
       load();
     } catch (e) {
-      alert("Erro ao criar conta: " + e.message);
+      toast.error("Erro ao criar conta: " + e.message);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Tem certeza que deseja excluir esta conta? Isso removerá suas transações (CASCADE).")) return;
     try {
       await deleteAccount(id);
+      toast.success("Conta excluída com sucesso.");
       load();
     } catch (e) {
-      alert("Erro ao excluir conta.");
+      toast.error("Erro ao excluir conta.");
     }
   };
 

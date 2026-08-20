@@ -3,7 +3,7 @@ import shutil
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from app.core.config import settings
-from app.db.database import engine
+from app.db.database import engine, Base
 
 router = APIRouter(tags=["Database Import/Export"])
 
@@ -36,3 +36,14 @@ def importDatabase(file: UploadFile = File(...)):
         return {"status": "success", "message": "Banco de dados importado com sucesso."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao importar banco de dados: {str(e)}")
+
+@router.post("/reset")
+def resetDatabase():
+    """Reseta completamente o banco de dados SQLite recriando todas as tabelas vazias"""
+    try:
+        engine.dispose()
+        Base.metadata.drop_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
+        return {"status": "success", "message": "Banco de dados resetado com sucesso."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao resetar o banco de dados: {str(e)}")

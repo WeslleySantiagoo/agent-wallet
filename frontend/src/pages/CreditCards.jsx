@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getCreditCards, createCreditCard, getAccounts, payInvoice } from '../services/api';
 import { Plus, CreditCard as CardIcon, Calendar, CheckCircle2, RefreshCw } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export const CreditCards = () => {
+  const { toast } = useToast();
   const [cards, setCards] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,19 +13,19 @@ export const CreditCards = () => {
     account_id: '',
     name: '',
     last_four_digits: '',
-    total_limit: 5000,
-    closing_day: 25,
-    due_day: 5
+    total_limit: 1000,
+    closing_day: 1,
+    due_day: 10
   });
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [cData, aData] = await Promise.all([getCreditCards(), getAccounts()]);
-      setCards(cData);
-      setAccounts(aData);
-      if (aData.length > 0 && !form.account_id) {
-        setForm(prev => ({ ...prev, account_id: aData[0].id }));
+      const [cardsData, accsData] = await Promise.all([getCreditCards(), getAccounts()]);
+      setCards(cardsData);
+      setAccounts(accsData);
+      if (accsData.length > 0 && !form.account_id) {
+        setForm(prev => ({ ...prev, account_id: accsData[0].id }));
       }
     } catch (e) {
       console.warn(e);
@@ -47,27 +49,26 @@ export const CreditCards = () => {
         due_day: parseInt(form.due_day)
       });
       setShowModal(false);
+      toast.success("Cartão de crédito criado com sucesso!");
       loadData();
     } catch (e) {
-      alert("Erro ao criar cartão.");
+      toast.error("Erro ao criar cartão de crédito.");
     }
   };
 
   const handlePayInvoice = async (cardId) => {
     if (accounts.length === 0) {
-      alert("Cadastre uma conta corrente primeiro para pagar a fatura.");
+      toast.error("Cadastre uma conta corrente primeiro para pagar a fatura.");
       return;
     }
-    const accId = prompt("Digite o ID da conta pagadora (ou selecione a primeira conta disponível):", accounts[0].id);
-    if (!accId) return;
+    const accId = accounts[0].id;
 
     try {
-      // Paga fatura genérica de ID 1 para teste
       await payInvoice(cardId, 1, parseInt(accId));
-      alert("Fatura paga com sucesso! Saldo debitado e limite liberado.");
+      toast.success("Fatura paga com sucesso! Saldo debitado e limite liberado.");
       loadData();
     } catch (e) {
-      alert("Status do pagamento: " + (e.response?.data?.detail || e.message));
+      toast.error("Status do pagamento: " + (e.response?.data?.detail || e.message));
     }
   };
 

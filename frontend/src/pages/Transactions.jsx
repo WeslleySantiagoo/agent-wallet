@@ -3,7 +3,10 @@ import { getTransactions, deleteTransaction } from '../services/api';
 import { Receipt, Trash2, ArrowUpRight, ArrowDownRight, CreditCard, RefreshCw } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
 
+import { useToast } from '../context/ToastContext';
+
 export const Transactions = () => {
+  const { toast } = useToast();
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { openChat } = useAIChat();
@@ -25,12 +28,12 @@ export const Transactions = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!confirm("Tem certeza que deseja excluir esta transação?")) return;
     try {
       await deleteTransaction(id);
+      toast.success("Transação excluída com sucesso.");
       load();
     } catch (e) {
-      alert("Erro ao excluir transação.");
+      toast.error("Erro ao excluir transação.");
     }
   };
 

@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getAIProviders, getActiveChatSession, getChatSessions, createChatSession, activateChatSession, deleteChatSession } from '../services/api';
+import { useToast } from './ToastContext';
 
-const AIChatContext = createContext();
+const AIChatContext = createContext(null);
 
 export const AIChatProvider = ({ children }) => {
+  const { toast } = useToast();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
@@ -66,7 +68,7 @@ export const AIChatProvider = ({ children }) => {
       const newSess = await createChatSession('Nova Conversa');
       await refreshSessionData();
     } catch (e) {
-      alert("Erro ao criar nova conversa: " + e.message);
+      toast.error("Erro ao criar nova conversa: " + e.message);
     }
   };
 
@@ -75,7 +77,7 @@ export const AIChatProvider = ({ children }) => {
       await activateChatSession(sessionId);
       await refreshSessionData();
     } catch (e) {
-      alert("Erro ao alternar conversa: " + e.message);
+      toast.error("Erro ao alternar conversa: " + e.message);
     }
   };
 
@@ -84,7 +86,7 @@ export const AIChatProvider = ({ children }) => {
       await deleteChatSession(sessionId);
       await refreshSessionData();
     } catch (e) {
-      alert("Erro ao excluir conversa: " + e.message);
+      toast.error("Erro ao excluir conversa: " + e.message);
     }
   };
 

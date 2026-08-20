@@ -18,6 +18,17 @@ export const AISidebar = () => {
   const [sidebarWidth, setSidebarWidth] = useState(380);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const isResizing = useRef(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+  };
+
+  React.useEffect(() => {
+    if (isChatOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isChatOpen]);
 
   const handleMouseDown = () => {
     isResizing.current = true;
@@ -180,6 +191,7 @@ export const AISidebar = () => {
             <span>Processando solicitação...</span>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Dynamic Input Bar (text / audio / multimodal) */}
