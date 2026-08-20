@@ -1,0 +1,18 @@
+{
+  "Gemini": {
+    "gemini-3.6-flash": ["Gemini 3.6 Flash", false],
+    "gemini-2.5-flash": ["Gemini 2.5 Flash", false],
+    "gemini-2.5-flash-lite": ["Gemini 2.5 Flash Lite", false],
+    "gemini-3-flash": ["Gemini 3 Flash", false],
+    "gemini-3.1-flash-lite": ["Gemini 3.1 Flash Lite", false],
+    "gemini-3.5-flash": ["Gemini 3.5 Flash", false]
+  },
+  "Nvidia": {
+    "nvidia/nemotron-3-ultra-550b-a55b": ["Nvidia Nemotron 70B", false],
+    "z-ai/glm-5.2": ["Z-AI GLM 5.2", false]
+  },
+  "Ollama": {
+    "gemma4": ["Gemma 4", false],
+    "nemotron-3-super": ["Nemotron 3 Super", false]
+  }
+}
