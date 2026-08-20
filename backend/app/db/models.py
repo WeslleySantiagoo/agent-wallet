@@ -110,6 +110,22 @@ class Transaction(Base):
     invoice = relationship("Invoice", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
 
+    @property
+    def institution(self) -> str | None:
+        if self.account:
+            return self.account.institution or self.account.name
+        if self.credit_card and self.credit_card.account:
+            return self.credit_card.account.institution or self.credit_card.account.name
+        return None
+
+    @property
+    def account_name(self) -> str | None:
+        if self.account:
+            return self.account.name
+        if self.credit_card:
+            return self.credit_card.name
+        return None
+
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 

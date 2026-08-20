@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getTransactions, deleteTransaction } from '../services/api';
 import { Receipt, Trash2, ArrowUpRight, ArrowDownRight, CreditCard, RefreshCw } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
-
 import { useToast } from '../context/ToastContext';
+import { getInstitutionLogo } from '../utils/institutions';
 
 export const Transactions = () => {
   const { toast } = useToast();
@@ -42,12 +42,12 @@ export const Transactions = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#ECDFCC]">Extrato de Lançamentos</h1>
-          <p className="text-xs text-[#9C9589]">Histórico completo de despesas, receitas e compras parceladas</p>
+          <p className="text-xs text-[#9C9589]">Histórico completo de despesas, receitas e compras parceladas por instituição</p>
         </div>
 
         <button
           onClick={openChat}
-          className="px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674]"
+          className="px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] cursor-pointer shadow-md transition-all"
         >
           + Adicionar via IA
         </button>
@@ -63,51 +63,72 @@ export const Transactions = () => {
           <Receipt className="w-12 h-12 text-[#697565] mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-[#ECDFCC]">Nenhum lançamento encontrado</h3>
           <p className="text-xs text-[#9C9589] mt-1 mb-4">Envie um texto para o assistente de IA ou adicione lançamentos.</p>
-          <button onClick={openChat} className="px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold">
+          <button onClick={openChat} className="px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold cursor-pointer">
             Abrir Chat IA
           </button>
         </div>
       ) : (
-        <div className="card-glow border border-[#3C3D37] overflow-hidden">
+        <div className="card-glow border border-[#3C3D37] overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-[#181C14] text-[#9C9589] uppercase tracking-wider font-medium border-b border-[#3C3D37]">
-                  <th className="py-3 px-4">Descrição</th>
-                  <th className="py-3 px-4">Data</th>
-                  <th className="py-3 px-4">Tipo</th>
-                  <th className="py-3 px-4 text-right">Valor</th>
-                  <th className="py-3 px-4 text-center">Ações</th>
+                  <th className="py-3.5 px-4">Instituição & Lançamento</th>
+                  <th className="py-3.5 px-4">Data</th>
+                  <th className="py-3.5 px-4">Tipo</th>
+                  <th className="py-3.5 px-4 text-right">Valor</th>
+                  <th className="py-3.5 px-4 text-center">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#3C3D37]">
+              <tbody className="divide-y divide-[#3C3D37]/60">
                 {txs.map(t => {
                   const isIncome = t.type === 'INCOME';
                   const isCard = t.type === 'CARD_PURCHASE';
+                  const instName = t.institution || t.account_name || 'Instituição';
+                  const logoUrl = getInstitutionLogo(instName);
 
                   return (
                     <tr key={t.id} className="hover:bg-[#4A4B44]/20 transition-colors">
                       <td className="py-3.5 px-4 font-medium text-[#ECDFCC] flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          isIncome ? 'bg-[#4CAF50]/20 text-[#4CAF50]' : isCard ? 'bg-[#697565]/30 text-[#ECDFCC]' : 'bg-[#E57373]/20 text-[#E57373]'
-                        }`}>
-                          {isIncome ? <ArrowUpRight className="w-4 h-4" /> : isCard ? <CreditCard className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        {/* Logo da Instituição Bancária / Carteira */}
+                        <div className="relative w-9 h-9 rounded-xl bg-[#181C14] border border-[#3C3D37] p-1.5 flex items-center justify-center shrink-0 shadow-inner">
+                          <img 
+                            src={logoUrl} 
+                            alt={instName} 
+                            className="w-full h-full object-contain" 
+                            onError={(e) => { e.target.src = '/assets/logos/logo-generic-bank.svg'; }}
+                          />
+                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
+                            isIncome ? 'bg-[#4CAF50] text-white' : isCard ? 'bg-[#697565] text-white' : 'bg-[#E57373] text-white'
+                          }`}>
+                            {isIncome ? <ArrowUpRight className="w-2.5 h-2.5" /> : isCard ? <CreditCard className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
+                          </div>
                         </div>
+
                         <div>
-                          <p className="font-semibold text-xs text-[#ECDFCC]">{t.description}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-xs text-[#ECDFCC]">{t.description}</p>
+                            {instName && (
+                              <span className="px-2 py-0.2 rounded-full text-[9px] font-mono bg-[#181C14] text-[#9C9589] border border-[#3C3D37]">
+                                {instName}
+                              </span>
+                            )}
+                          </div>
                           {t.is_installment && (
-                            <span className="text-[10px] text-[#697565]">Parcela {t.installment_number}/{t.total_installments}</span>
+                            <span className="text-[10px] text-[#697565] block font-mono">
+                              Parcela {t.installment_number}/{t.total_installments}
+                            </span>
                           )}
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-[#9C9589]">
+                      <td className="py-3.5 px-4 text-[#9C9589] font-mono text-[11px]">
                         {new Date(t.date).toLocaleDateString('pt-BR')}
                       </td>
 
                       <td className="py-3.5 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold ${
-                          isIncome ? 'bg-[#4CAF50]/20 text-[#4CAF50]' : isCard ? 'bg-[#697565]/30 text-[#ECDFCC]' : 'bg-[#E57373]/20 text-[#E57373]'
+                          isIncome ? 'bg-[#4CAF50]/20 text-[#4CAF50] border border-[#4CAF50]/30' : isCard ? 'bg-[#697565]/30 text-[#ECDFCC] border border-[#697565]/40' : 'bg-[#E57373]/20 text-[#E57373] border border-[#E57373]/30'
                         }`}>
                           {isIncome ? 'Receita' : isCard ? 'Cartão Crédito' : 'Despesa'}
                         </span>
@@ -120,7 +141,7 @@ export const Transactions = () => {
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => handleDelete(t.id)}
-                          className="p-1.5 rounded-lg text-[#E57373] hover:bg-[#E57373]/10"
+                          className="p-1.5 rounded-lg text-[#E57373] hover:bg-[#E57373]/10 cursor-pointer transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

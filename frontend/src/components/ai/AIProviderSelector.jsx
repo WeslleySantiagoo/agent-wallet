@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAIChat } from '../../context/AIChatContext';
-import { Cpu, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { Cpu, ChevronUp, Check, Sparkles } from 'lucide-react';
 
 export const AIProviderSelector = () => {
   const { selectedProvider, setSelectedProvider, selectedModel, setSelectedModel, providersData } = useAIChat();
@@ -46,7 +46,7 @@ export const AIProviderSelector = () => {
         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold bg-[#697565]/20 text-[#ECDFCC] border border-[#697565]/30">
           {currentInputType}
         </span>
-        <ChevronDown 
+        <ChevronUp 
           className={`w-3.5 h-3.5 text-[#9C9589] ml-1 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
         />
       </button>
@@ -59,10 +59,6 @@ export const AIProviderSelector = () => {
             : 'opacity-0 scale-90 translate-y-2 pointer-events-none'
         }`}
       >
-        <div className="px-2 py-1 text-[10px] uppercase font-bold text-[#9C9589] tracking-wider border-b border-[#3C3D37]/60">
-          Modelos de IA Disponíveis
-        </div>
-
         {providerEntries.map(([pName, modelsDict]) => {
           const modelEntries = Object.entries(modelsDict || {});
           if (modelEntries.length === 0) return null;

@@ -109,6 +109,8 @@ class TransactionResponse(TransactionBase):
     installment_number: Optional[int] = None
     total_installments: Optional[int] = None
     installment_group_id: Optional[str] = None
+    account_name: Optional[str] = None
+    institution: Optional[str] = None
     created_at: datetime
 
     class Config:
