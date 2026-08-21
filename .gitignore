@@ -1,0 +1,73 @@
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+frontend/.env
+
+# Local Databases (SQLite) & Storage
+*.db
+*.sqlite
+*.sqlite3
+financas.db
+backend/financas.db
+backend/data/*.db
+
+# AI Provider Keys & Local Configs (Do not expose API keys)
+backend/data/ai_providers.json
+!backend/data/ai_providers.json.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+
+# IDEs & System Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Temporary / Scratch Files
+test.json
+scratch/
