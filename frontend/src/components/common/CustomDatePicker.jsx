@@ -10,6 +10,7 @@ export const CustomDatePicker = ({ value, onChange }) => {
   
   // Mes e Ano visualizados no calendario
   const [viewDate, setViewDate] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  const [slideDirection, setSlideDirection] = useState('animate-calendar-right');
 
   useEffect(() => {
     if (value) {
@@ -36,10 +37,12 @@ export const CustomDatePicker = ({ value, onChange }) => {
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   const prevMonth = () => {
+    setSlideDirection('animate-calendar-left');
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
   };
 
   const nextMonth = () => {
+    setSlideDirection('animate-calendar-right');
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
   };
 
@@ -106,42 +109,46 @@ export const CustomDatePicker = ({ value, onChange }) => {
 
       {/* Popover Calendar Grid */}
       <div
-        className={`absolute left-0 top-full mt-2 w-72 bg-[#181C14] border border-[#3C3D37] rounded-2xl shadow-2xl p-4 z-50 backdrop-blur-xl origin-top transition-all duration-300 ease-in-out transform ${
+        className={`absolute left-0 top-full mt-2 w-72 bg-[#181C14] border border-[#3C3D37] rounded-2xl shadow-2xl p-4 z-50 backdrop-blur-xl origin-top transition-all duration-300 ease-in-out transform overflow-hidden ${
           isOpen
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
         }`}
       >
         {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-3 border-b border-[#3C3D37] pb-2">
+        <div className="flex items-center justify-between mb-3 border-b border-[#3C3D37] pb-2 select-none">
           <button
             type="button"
             onClick={prevMonth}
-            className="p-1 rounded-lg hover:bg-[#3C3D37] text-[#9C9589] hover:text-[#ECDFCC] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl hover:bg-[#3C3D37] text-[#9C9589] hover:text-[#ECDFCC] transition-all active:scale-90 cursor-pointer"
+            title="Mês Anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-xs font-bold text-[#ECDFCC]">
+          
+          <span key={`header-${year}-${month}`} className={`text-xs font-bold text-[#ECDFCC] ${slideDirection}`}>
             {monthNames[month]} {year}
           </span>
+          
           <button
             type="button"
             onClick={nextMonth}
-            className="p-1 rounded-lg hover:bg-[#3C3D37] text-[#9C9589] hover:text-[#ECDFCC] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl hover:bg-[#3C3D37] text-[#9C9589] hover:text-[#ECDFCC] transition-all active:scale-90 cursor-pointer"
+            title="Próximo Mês"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         {/* Days Header */}
-        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-mono text-[#9C9589] mb-2 font-bold">
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-mono text-[#9C9589] mb-2 font-bold select-none">
           {dayNames.map((day) => (
             <div key={day}>{day}</div>
           ))}
         </div>
 
-        {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-1 text-center">
+        {/* Calendar Days Animated Container */}
+        <div key={`grid-${year}-${month}`} className={`grid grid-cols-7 gap-1 text-center ${slideDirection}`}>
           {daysGrid.map((dateObj, idx) => {
             if (!dateObj) {
               return <div key={`empty-${idx}`} className="h-8" />;
