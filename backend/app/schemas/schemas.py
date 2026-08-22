@@ -78,6 +78,7 @@ class CategoryBase(BaseModel):
     name: str
     icon: Optional[str] = None
     color: Optional[str] = None
+    parent_id: Optional[int] = None
 
 class CategoryCreate(CategoryBase):
     pass

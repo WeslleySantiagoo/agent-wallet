@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { getCreditCards, createCreditCard, getAccounts, payInvoice } from '../services/api';
 import { Plus, CreditCard as CardIcon, Calendar, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { CurrencyInput } from '../components/common/CurrencyInput';
+import { CustomSelect } from '../components/common/CustomSelect';
+import { CustomNumberInput } from '../components/common/CustomNumberInput';
 
 export const CreditCards = () => {
   const { toast } = useToast();
@@ -155,75 +158,61 @@ export const CreditCards = () => {
             <h2 className="text-base font-bold text-[#ECDFCC]">Cadastrar Cartão de Crédito</h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="text-xs text-[#9C9589] block mb-1">Conta Vinculada</label>
-                <select
+                <label className="text-xs text-[#9C9589] font-medium block mb-1">Conta Vinculada</label>
+                <CustomSelect
                   value={form.account_id}
-                  onChange={e => setForm({ ...form, account_id: e.target.value })}
-                  className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
-                >
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.institution})</option>
-                  ))}
-                </select>
+                  onChange={(val) => setForm({ ...form, account_id: val })}
+                  options={accounts.map(a => ({
+                    value: a.id,
+                    label: `${a.name} (${a.institution || 'Banco'})`
+                  }))}
+                  placeholder="Selecione uma conta..."
+                />
               </div>
 
               <div>
-                <label className="text-xs text-[#9C9589] block mb-1">Nome do Cartão</label>
+                <label className="text-xs text-[#9C9589] font-medium block mb-1">Nome do Cartão</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: Nubank Violeta"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
+                  className="w-full bg-[#181C14] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#3C3D37] outline-none focus:border-[#697565]"
                 />
               </div>
-
+              <label className="text-xs text-[#9C9589] font-medium block mb-1">Últimos 4 Dígitos</label>
+              <input
+                type="text"
+                maxLength={4}
+                placeholder="9261"
+                value={form.last_four_digits}
+                onChange={e => setForm({ ...form, last_four_digits: e.target.value })}
+                className="w-full bg-[#181C14] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#3C3D37] outline-none focus:border-[#697565]"
+              />
+              <label className="text-xs text-[#9C9589] font-medium block mb-1">Limite Total (R$)</label>
+              <CurrencyInput
+                value={form.total_limit}
+                onChange={(val) => setForm({ ...form, total_limit: val })}
+                isIncome={true}
+              />
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#9C9589] block mb-1">Últimos 4 Dígitos</label>
-                  <input
-                    type="text"
-                    maxLength={4}
-                    placeholder="9261"
-                    value={form.last_four_digits}
-                    onChange={e => setForm({ ...form, last_four_digits: e.target.value })}
-                    className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-[#9C9589] block mb-1">Limite Total (R$)</label>
-                  <input
-                    type="number"
-                    required
-                    value={form.total_limit}
-                    onChange={e => setForm({ ...form, total_limit: e.target.value })}
-                    className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-[#9C9589] block mb-1">Dia Fechamento</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={31}
+                  <label className="text-xs text-[#9C9589] font-medium block mb-1">Dia Fechamento</label>
+                  <CustomNumberInput
                     value={form.closing_day}
-                    onChange={e => setForm({ ...form, closing_day: e.target.value })}
-                    className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
+                    onChange={(val) => setForm({ ...form, closing_day: val })}
+                    min={1}
+                    max={31}
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-[#9C9589] block mb-1">Dia Vencimento</label>
-                  <input
-                    type="number"
+                  <label className="text-xs text-[#9C9589] font-medium block mb-1">Dia Vencimento</label>
+                  <CustomNumberInput
+                    value={form.due_day}
+                    onChange={(val) => setForm({ ...form, due_day: val })}
                     min={1}
                     max={31}
-                    value={form.due_day}
-                    onChange={e => setForm({ ...form, due_day: e.target.value })}
-                    className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
                   />
                 </div>
               </div>

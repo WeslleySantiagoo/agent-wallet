@@ -78,10 +78,12 @@ class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(100), nullable=False)
     icon = Column(String(50), nullable=True)
     color = Column(String(20), nullable=True)
+    parent_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=True)
 
+    parent = relationship("Category", remote_side=[id], backref="subcategories")
     transactions = relationship("Transaction", back_populates="category")
 
 class Transaction(Base):

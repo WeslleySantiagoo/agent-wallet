@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export const CurrencyInput = ({ value = 0, onChange, isIncome = false }) => {
-  // Converte valor float em string de digitos em centavos
+  const inputRef = useRef(null);
+
   const floatToCentsString = (val) => {
     if (!val || isNaN(val)) return '0';
     return Math.round(val * 100).toString();
@@ -25,33 +26,40 @@ export const CurrencyInput = ({ value = 0, onChange, isIncome = false }) => {
 
   const formatDisplay = (digitsStr) => {
     const numericValue = parseFloat(digitsStr || '0') / 100;
-    const formatted = numericValue.toLocaleString('pt-BR', {
+    return numericValue.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    return formatted;
   };
 
+  const formattedValue = formatDisplay(digits);
+  const prefix = isIncome ? '+R$' : 'R$';
+
   return (
-    <div className="relative w-full">
-      <div className={`flex items-center bg-[#181C14] border border-[#3C3D37] rounded-2xl px-4 py-3 focus-within:border-[#697565] transition-all shadow-inner ${
-        isIncome ? 'border-[#4CAF50]/30' : 'border-[#E57373]/30'
-      }`}>
-        <span className={`text-sm sm:text-base font-bold mr-2 select-none ${
-          isIncome ? 'text-[#4CAF50]' : 'text-[#E57373]'
-        }`}>
-          {isIncome ? '+ R$' : '- R$'}
-        </span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={formatDisplay(digits)}
-          onChange={handleInputChange}
-          placeholder="0,00"
-          className={`w-full bg-transparent text-xl sm:text-2xl font-extrabold outline-none tracking-wide ${
+    <div
+      onClick={() => inputRef.current?.focus()}
+      className="relative w-full py-2 flex items-center justify-start cursor-text select-none group"
+    >
+      {/* Elemento de input invisivel por cima do texto */}
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        value={formattedValue}
+        onChange={handleInputChange}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-text outline-none border-none"
+        autoFocus
+      />
+
+      {/* Exibicao tipografica minimalista alinhada a esquerda, mesmo tamanho de fonte e cor da IDV */}
+      <div className="flex items-center justify-start tracking-tight">
+        <span
+          className={`text-4xl sm:text-5xl font-black ${
             isIncome ? 'text-[#4CAF50]' : 'text-[#ECDFCC]'
           }`}
-        />
+        >
+          {prefix}{formattedValue}
+        </span>
       </div>
     </div>
   );

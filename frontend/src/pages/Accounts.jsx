@@ -3,6 +3,7 @@ import { getAccounts, createAccount, deleteAccount } from '../services/api';
 import { Plus, Trash2, Wallet, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { PREDEFINED_INSTITUTIONS, getInstitutionLogo } from '../utils/institutions';
+import { CurrencyInput } from '../components/common/CurrencyInput';
 
 export const Accounts = () => {
   const { toast } = useToast();
@@ -221,14 +222,11 @@ export const Accounts = () => {
               </div>
 
               <div>
-                <label className="text-xs text-[#9C9589] block mb-1">Saldo Inicial (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
+                <label className="text-xs text-[#9C9589] font-medium block mb-1">Saldo Inicial (R$)</label>
+                <CurrencyInput
                   value={form.balance}
-                  onChange={e => setForm({ ...form, balance: e.target.value })}
-                  className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none focus:border-[#697565]"
+                  onChange={(val) => setForm({ ...form, balance: val })}
+                  isIncome={true}
                 />
               </div>
 

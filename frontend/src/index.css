@@ -131,3 +131,34 @@ body {
 .accordion-body {
   overflow: hidden;
 }
+
+/* Keyframes para Transição de Mês no DatePicker */
+@keyframes calendarSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes calendarSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-calendar-left {
+  animation: calendarSlideLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-calendar-right {
+  animation: calendarSlideRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
