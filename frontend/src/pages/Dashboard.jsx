@@ -11,9 +11,12 @@ import { RecentTransactions } from '../components/dashboard/RecentTransactions';
 import { RefreshCw, Plus } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
 
+import { CreateTransactionModal } from '../components/transactions/CreateTransactionModal';
+
 export const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { openChat } = useAIChat();
 
   const fetchSummary = async () => {
@@ -50,13 +53,21 @@ export const Dashboard = () => {
           <p className="text-xs text-[#9C9589]">Seu controle financeiro local-first em tempo real</p>
         </div>
 
-        <button
-          onClick={openChat}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] font-semibold text-xs hover:bg-[#7A8674] shadow-lg shadow-[#697565]/20 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo Lançamento com IA</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] font-semibold text-xs hover:bg-[#7A8674] shadow-lg shadow-[#697565]/20 cursor-pointer transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Transação</span>
+          </button>
+          <button
+            onClick={openChat}
+            className="px-4 py-2 rounded-xl bg-[#3C3D37] text-[#ECDFCC] font-semibold text-xs hover:bg-[#4A4B44] border border-[#4A4B44] cursor-pointer transition-all"
+          >
+            + Via IA
+          </button>
+        </div>
       </div>
 
       {/* Modular Cards Grid */}
@@ -97,6 +108,13 @@ export const Dashboard = () => {
         <EvolutionChart data={summary?.monthly_evolution || []} />
         <RecentTransactions transactions={summary?.recent_transactions || []} />
       </div>
+
+      {/* Modal de Criar Transacao Manual */}
+      <CreateTransactionModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={fetchSummary}
+      />
     </div>
   );
 };
