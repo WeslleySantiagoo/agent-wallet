@@ -6,6 +6,14 @@ from app.core.config import settings
 PROVIDERS_FILE = os.path.join(settings.DATA_DIR, "ai_providers.json")
 
 DEFAULT_CONFIG = {
+  "ParseFin AI": {
+    "parsefin-free": {
+      "name": "ParseFin AI (Grátis)",
+      "input_type": "multimodal",
+      "is_system_free": True,
+      "api_key": True
+    }
+  },
   "Gemini": {
     "gemini-3.6-flash": {
       "name": "Gemini 3.6 Flash",
@@ -179,6 +187,13 @@ def getAgent(provider_id: str = None, model_id: str = None):
                 break
 
     p_lower = matched_provider_name.lower()
+    m_lower = (matched_model_id or "").lower()
+
+    # IA Grátis do Sistema ("ParseFin AI"): Usa a chave de sistema configurada no ambiente do servidor
+    if "parsefin" in p_lower or "parsefin" in m_lower:
+        system_key = os.getenv("SYSTEM_FREE_AI_API_KEY", os.getenv("OLLAMA_API_KEY", os.getenv("OLLAMA_KEY", "")))
+        return OllamaAgent(api_key=system_key, model_id="gemma4")
+
     if not api_key and "ollama" in p_lower:
         api_key = os.getenv("OLLAMA_API_KEY", os.getenv("OLLAMA_KEY", ""))
 
@@ -187,4 +202,9 @@ def getAgent(provider_id: str = None, model_id: str = None):
     elif "ollama" in p_lower:
         return OllamaAgent(api_key=api_key, model_id=matched_model_id or "gemma4")
     else:
+        # Fallback para a IA Grátis do Sistema se o usuário não configurou chave própria
+        if not api_key and not os.getenv("GEMINI_API_KEY"):
+            system_key = os.getenv("SYSTEM_FREE_AI_API_KEY", os.getenv("OLLAMA_API_KEY", os.getenv("OLLAMA_KEY", "")))
+            if system_key:
+                return OllamaAgent(api_key=system_key, model_id="gemma4")
         return GeminiAgent(api_key=api_key, model_id=matched_model_id or "gemini-3.5-flash")
