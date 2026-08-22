@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getCreditCards, createCreditCard, getAccounts, payInvoice } from '../services/api';
 import { Plus, CreditCard as CardIcon, Calendar, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { CurrencyInput } from '../components/common/CurrencyInput';
 
 export const CreditCards = () => {
   const { toast } = useToast();
@@ -191,14 +192,12 @@ export const CreditCards = () => {
                     className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-[#9C9589] block mb-1">Limite Total (R$)</label>
-                  <input
-                    type="number"
-                    required
+                <div className="col-span-2">
+                  <label className="text-xs text-[#9C9589] font-medium block mb-1">Limite Total (R$)</label>
+                  <CurrencyInput
                     value={form.total_limit}
-                    onChange={e => setForm({ ...form, total_limit: e.target.value })}
-                    className="w-full bg-[#3C3D37] text-xs text-[#ECDFCC] p-2.5 rounded-xl border border-[#4A4B44] outline-none"
+                    onChange={(val) => setForm({ ...form, total_limit: val })}
+                    isIncome={true}
                   />
                 </div>
               </div>

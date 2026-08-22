@@ -4,8 +4,18 @@ from app.core.config import settings
 from app.db.database import engine, Base
 from app.api import accounts, credit_cards, transactions, categories, routes, ai_routes, ai_config_routes
 
+from sqlalchemy import text
+
 # Create DB tables on startup
 Base.metadata.create_all(bind=engine)
+
+# Auto-migrate SQLite schema additions if column doesn't exist
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE categories ADD COLUMN parent_id INTEGER REFERENCES categories(id) ON DELETE CASCADE"))
+        conn.commit()
+    except Exception:
+        pass  # Coluna parent_id ja existe
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
