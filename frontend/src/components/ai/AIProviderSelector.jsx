@@ -42,7 +42,7 @@ export const AIProviderSelector = () => {
       >
         <Sparkles className="w-3.5 h-3.5 text-[#697565]" />
         <span className="font-semibold">{currentDisplayName}</span>
-        <span className="text-[10px] text-[#9C9589] font-mono hidden sm:inline">({selectedProvider})</span>
+        {/* <span className="text-[10px] text-[#9C9589] font-mono hidden sm:inline">({selectedProvider})</span> */}
         {/* <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold bg-[#697565]/20 text-[#ECDFCC] border border-[#697565]/30">
           {currentInputType}
         </span> */}
