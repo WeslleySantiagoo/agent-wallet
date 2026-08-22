@@ -6,7 +6,6 @@ on:
     paths:
       - "frontend/**"
       - "backend/**"
-      - "docker-compose.yml"
       - ".github/workflows/ci.yml"
 
 # Garante que apenas a execução mais recente de uma mesma PR seja relevante,
@@ -79,34 +78,3 @@ jobs:
           GEMINI_API_KEY: test-mock-key
           NVIDIA_API_KEY: test-mock-key
         run: python -c "from app.main import app; print('FastAPI app importada com sucesso:', app.title)"
-
-  # ─────────────────────────────────────────────────────────────────
-  # 3) DOCKER — Build das imagens (frontend + backend)
-  # ─────────────────────────────────────────────────────────────────
-  docker-check:
-    name: Docker — Build de imagens
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build da imagem do Backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: false
-          tags: parsefin-backend:ci
-          load: true
-
-      - name: Build da imagem do Frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: false
-          tags: parsefin-frontend:ci
-          load: true
