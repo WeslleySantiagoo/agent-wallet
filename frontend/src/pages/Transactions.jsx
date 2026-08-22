@@ -5,10 +5,14 @@ import { useAIChat } from '../context/AIChatContext';
 import { useToast } from '../context/ToastContext';
 import { getInstitutionLogo } from '../utils/institutions';
 
+import { CreateTransactionModal } from '../components/transactions/CreateTransactionModal';
+import { Plus } from 'lucide-react';
+
 export const Transactions = () => {
   const { toast } = useToast();
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { openChat } = useAIChat();
 
   const load = async () => {
@@ -45,12 +49,21 @@ export const Transactions = () => {
           <p className="text-xs text-[#9C9589]">Histórico completo de despesas, receitas e compras parceladas por instituição</p>
         </div>
 
-        <button
-          onClick={openChat}
-          className="px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] cursor-pointer shadow-md transition-all"
-        >
-          + Adicionar via IA
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] cursor-pointer shadow-md transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Transação</span>
+          </button>
+          <button
+            onClick={openChat}
+            className="px-4 py-2 rounded-xl bg-[#3C3D37] text-[#ECDFCC] text-xs font-semibold hover:bg-[#4A4B44] cursor-pointer border border-[#4A4B44] transition-all"
+          >
+            + Via IA
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -154,6 +167,13 @@ export const Transactions = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Criar Transacao Manual */}
+      <CreateTransactionModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={load}
+      />
     </div>
   );
 };
