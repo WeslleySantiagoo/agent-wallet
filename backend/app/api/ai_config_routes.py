@@ -8,6 +8,11 @@ router = APIRouter(prefix="/ai/providers", tags=["AI Configuration"])
 def getProviders():
     return provider_config.getMaskedProvidersConfig()
 
+def is_masked_key(key: Any) -> bool:
+    if not isinstance(key, str):
+        return False
+    return "..." in key or key == "********" or (len(key) > 0 and set(key) == {'*'})
+
 @router.put("")
 def updateProviders(new_config: Dict[str, Any]):
     current_config = provider_config.loadProvidersConfig()
@@ -22,14 +27,14 @@ def updateProviders(new_config: Dict[str, Any]):
                     curr_info = curr_models.get(model_id, {})
                     curr_key = curr_info.get("api_key", False) if isinstance(curr_info, dict) else False
 
-                    if isinstance(new_key, str) and "..." in new_key:
+                    if is_masked_key(new_key):
                         model_info["api_key"] = curr_key
                 elif isinstance(model_info, list) and len(model_info) >= 2:
                     new_key = model_info[-1]
                     curr_info = curr_models.get(model_id, [None, False])
                     curr_key = curr_info[-1] if isinstance(curr_info, list) and len(curr_info) >= 2 else False
 
-                    if isinstance(new_key, str) and "..." in new_key:
+                    if is_masked_key(new_key):
                         model_info[-1] = curr_key
 
     provider_config.saveProvidersConfig(new_config)

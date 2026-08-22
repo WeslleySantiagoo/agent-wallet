@@ -165,12 +165,26 @@ def getAgent(provider_id: str = None, model_id: str = None):
     else:
         raw_key = False
 
-    api_key = raw_key if isinstance(raw_key, str) and raw_key != "false" else ""
+    def is_valid_key(k: Any) -> bool:
+        return isinstance(k, str) and k and k != "false" and "..." not in k and set(k) != {'*'}
+
+    api_key = raw_key if is_valid_key(raw_key) else ""
+
+    # Se o modelo específico não tem chave definida, procura outra chave válida cadastrada no mesmo provedor
+    if not api_key:
+        for m_id, m_info in models_dict.items():
+            k = m_info.get("api_key", False) if isinstance(m_info, dict) else (m_info[-1] if isinstance(m_info, list) and len(m_info) >= 2 else False)
+            if is_valid_key(k):
+                api_key = k
+                break
 
     p_lower = matched_provider_name.lower()
+    if not api_key and "ollama" in p_lower:
+        api_key = os.getenv("OLLAMA_API_KEY", os.getenv("OLLAMA_KEY", ""))
+
     if "nvidia" in p_lower:
         return NvidiaAgent(api_key=api_key, model_id=matched_model_id or "nvidia/llama-3.1-nemotron-70b-instruct")
     elif "ollama" in p_lower:
-        return OllamaAgent(model_id=matched_model_id or "llama3.1")
+        return OllamaAgent(api_key=api_key, model_id=matched_model_id or "gemma4")
     else:
         return GeminiAgent(api_key=api_key, model_id=matched_model_id or "gemini-3.5-flash")
