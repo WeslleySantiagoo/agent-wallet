@@ -10,8 +10,8 @@ export const AIChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [sessionsList, setSessionsList] = useState([]);
-  const [selectedProvider, setSelectedProvider] = useState('Gemini');
-  const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
+  const [selectedProvider, setSelectedProvider] = useState('ParseFin AI');
+  const [selectedModel, setSelectedModel] = useState('parsefin-free');
   const [providersData, setProvidersData] = useState({});
   const [loadingSession, setLoadingSession] = useState(true);
 

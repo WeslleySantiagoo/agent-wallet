@@ -1,4 +1,12 @@
 {
+  "ParseFin AI": {
+    "parsefin-free": {
+      "name": "ParseFin AI (Grátis)",
+      "input_type": "multimodal",
+      "is_system_free": true,
+      "api_key": true
+    }
+  },
   "Gemini": {
     "gemini-3.6-flash": {
       "name": "Gemini 3.6 Flash",
