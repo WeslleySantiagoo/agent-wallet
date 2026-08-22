@@ -16,12 +16,37 @@ DEFAULT_CONFIG = {
       "name": "Gemini 2.5 Flash",
       "input_type": "text",
       "api_key": False
+    },
+    "gemini-2.5-flash-lite": {
+      "name": "Gemini 2.5 Flash Lite",
+      "input_type": "text",
+      "api_key": False
+    },
+    "gemini-3-flash": {
+      "name": "Gemini 3 Flash",
+      "input_type": "multimodal",
+      "api_key": False
+    },
+    "gemini-3.1-flash-lite": {
+      "name": "Gemini 3.1 Flash Lite",
+      "input_type": "text",
+      "api_key": False
+    },
+    "gemini-3.5-flash": {
+      "name": "Gemini 3.5 Flash",
+      "input_type": "multimodal",
+      "api_key": False
     }
   },
   "Nvidia": {
     "nvidia/nemotron-3-ultra-550b-a55b": {
       "name": "Nvidia Nemotron 70B",
       "input_type": "text",
+      "api_key": False
+    },
+    "z-ai/glm-5.2": {
+      "name": "Z-AI GLM 5.2",
+      "input_type": "multimodal",
       "api_key": False
     }
   },
@@ -30,22 +55,57 @@ DEFAULT_CONFIG = {
       "name": "Gemma 4",
       "input_type": "text",
       "api_key": False
+    },
+    "nemotron-3-super": {
+      "name": "Nemotron 3 Super",
+      "input_type": "audio",
+      "api_key": False
     }
   }
 }
 
 def loadProvidersConfig() -> Dict[str, Any]:
+    example_paths = [
+        "data/ai_providers.json.example",
+        "app/data/ai_providers.json.example",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "ai_providers.json.example")
+    ]
+    template_config = dict(DEFAULT_CONFIG)
+    for p in example_paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    template_config = json.load(f)
+                break
+            except Exception:
+                pass
+
     if not os.path.exists(PROVIDERS_FILE):
-        default_path = "data/ai_providers.json"
-        if os.path.exists(default_path):
-            with open(default_path, "r", encoding="utf-8") as f:
-                config = json.load(f)
-            saveProvidersConfig(config)
-            return config
-        saveProvidersConfig(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG
-    with open(PROVIDERS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+        saveProvidersConfig(template_config)
+        return template_config
+
+    try:
+        with open(PROVIDERS_FILE, "r", encoding="utf-8") as f:
+            existing_config = json.load(f)
+    except Exception:
+        existing_config = {}
+
+    # Auto-merge missing default models while keeping existing API keys intact
+    updated = False
+    for provider, models in template_config.items():
+        if provider not in existing_config:
+            existing_config[provider] = models
+            updated = True
+        else:
+            for model_id, model_info in models.items():
+                if model_id not in existing_config[provider]:
+                    existing_config[provider][model_id] = model_info
+                    updated = True
+
+    if updated:
+        saveProvidersConfig(existing_config)
+
+    return existing_config
 
 def saveProvidersConfig(config: Dict[str, Any]) -> None:
     os.makedirs(settings.DATA_DIR, exist_ok=True)
