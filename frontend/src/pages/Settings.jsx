@@ -481,7 +481,7 @@ export const Settings = () => {
           <div className="bg-[#181C14] p-3.5 rounded-xl border border-[#3C3D37]">
             <span className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider block">Custo Total (USD)</span>
             <p className="text-lg font-bold text-[#4CAF50] mt-0.5">
-              ${(aiUsageStats?.total_estimated_cost_usd || 0).toFixed(4)}
+              ${(Number(aiUsageStats?.total_estimated_cost_usd) || 0).toFixed(4)}
             </p>
           </div>
         </div>
@@ -553,11 +553,11 @@ export const Settings = () => {
                           {m.model_name}
                           <span className="block text-[9px] text-[#9C9589] font-sans">{m.provider}</span>
                         </td>
-                        <td className="py-2.5 px-3.5 text-right text-[#ECDFCC] font-mono">{m.calls}</td>
-                        <td className="py-2.5 px-3.5 text-right text-[#9C9589] font-mono">{m.input_tokens.toLocaleString('pt-BR')}</td>
-                        <td className="py-2.5 px-3.5 text-right text-[#9C9589] font-mono">{m.output_tokens.toLocaleString('pt-BR')}</td>
+                        <td className="py-2.5 px-3.5 text-right text-[#ECDFCC] font-mono">{(m.calls || 0).toLocaleString('pt-BR')}</td>
+                        <td className="py-2.5 px-3.5 text-right text-[#9C9589] font-mono">{(m.input_tokens || 0).toLocaleString('pt-BR')}</td>
+                        <td className="py-2.5 px-3.5 text-right text-[#9C9589] font-mono">{(m.output_tokens || 0).toLocaleString('pt-BR')}</td>
                         <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#4CAF50]">
-                          ${m.estimated_cost_usd.toFixed(4)}
+                          ${(Number(m.estimated_cost_usd) || 0).toFixed(4)}
                         </td>
                       </tr>
                     ))
