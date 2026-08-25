@@ -296,7 +296,12 @@ export const Settings = () => {
 
             <label className="mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#697565] hover:bg-[#7A8674] text-[#ECDFCC] text-xs font-semibold cursor-pointer transition-colors shadow-md">
               <Upload className="w-4 h-4" />
-              <span>{importing ? 'Importando...' : 'Selecionar ou Arrastar .db'}</span>
+              <span>
+                {importing 
+                  ? 'Importando...' 
+                  : <><span className="md:hidden">Selecionar .db</span><span className="hidden md:inline">Selecionar ou Arrastar .db</span></>
+                }
+              </span>
               <input type="file" accept=".db" onChange={handleImportInputChange} className="hidden" />
             </label>
           </div>

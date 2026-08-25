@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getAIProviders, getActiveChatSession, getChatSessions, createChatSession, activateChatSession, deleteChatSession } from '../services/api';
 import { useToast } from './ToastContext';
 
@@ -90,8 +90,24 @@ export const AIChatProvider = ({ children }) => {
     }
   };
 
-  const toggleChat = () => setIsChatOpen(prev => !prev);
-  const openChat = () => setIsChatOpen(true);
+  const hasOpenedOnce = useRef(false);
+
+  const toggleChat = async () => {
+    if (!isChatOpen && !hasOpenedOnce.current) {
+      hasOpenedOnce.current = true;
+      await handleCreateNewSession();
+    }
+    setIsChatOpen(prev => !prev);
+  };
+  
+  const openChat = async () => {
+    if (!isChatOpen && !hasOpenedOnce.current) {
+      hasOpenedOnce.current = true;
+      await handleCreateNewSession();
+    }
+    setIsChatOpen(true);
+  };
+
   const closeChat = () => setIsChatOpen(false);
 
   return (
