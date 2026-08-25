@@ -20,10 +20,6 @@ export const InstallmentsCard = ({ activeInstallmentsCount = 0 }) => {
         </p>
       </div>
 
-      <div className="text-[11px] text-[#697565] font-medium border-t border-[#4A4B44]/40 pt-2 flex items-center justify-between">
-        <span>Compromete o limite total</span>
-        <span>Aloca por fatura</span>
-      </div>
     </div>
   );
 };

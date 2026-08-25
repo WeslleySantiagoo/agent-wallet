@@ -3,6 +3,7 @@ import { getAccounts, getCreditCards, getCategories, createTransaction, createCa
 import { PillToggle } from '../common/PillToggle';
 import { CurrencyInput } from '../common/CurrencyInput';
 import { CustomDatePicker } from '../common/CustomDatePicker';
+import { CustomNumberInput } from '../common/CustomNumberInput';
 import { useToast } from '../../context/ToastContext';
 import { 
   ArrowDownRight, ArrowUpRight, X, Utensils, Home, Car, Tv, 
@@ -55,6 +56,20 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [totalInstallments, setTotalInstallments] = useState(2);
+  const [paidInstallments, setPaidInstallments] = useState(0);
+
+  // Efeito para Scroll Lock no Body
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -139,11 +154,14 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
     setSubmitting(true);
     try {
       const payload = {
-        amount: amount,
+        amount: parseFloat(amount),
         description: description.trim(),
         type: txType,
         date: dateStr,
-        category_id: selectedCategoryId ? parseInt(selectedCategoryId) : null
+        category_id: selectedCategoryId ? parseInt(selectedCategoryId) : null,
+        is_installment: isInstallment && paymentMode === 'CARD' && !isIncome,
+        total_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? totalInstallments : 1,
+        paid_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? paidInstallments : 0
       };
 
       if (txType === 'INCOME') {
@@ -198,7 +216,7 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#3C3D37] p-6 pb-4">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-[#ECDFCC]">Nova Transação Manual</h2>
+            <h2 className="text-base sm:text-lg font-bold text-[#ECDFCC]">Nova Transação</h2>
             <p className="text-xs text-[#9C9589]">Cadastre despesas ou receitas com categorias personalizadas</p>
           </div>
           <button
@@ -356,6 +374,53 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Opção de Parcelamento */}
+              {!isIncome && paymentMode === 'CARD' && cards.length > 0 && (
+                <div className="mt-4 p-4 border border-[#3C3D37] rounded-2xl bg-[#181C14]/30">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isInstallment}
+                      onChange={(e) => setIsInstallment(e.target.checked)}
+                      className="accent-[#697565] w-4 h-4 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-[#ECDFCC]">Parcelar compra no cartão</span>
+                  </label>
+
+                  {isInstallment && (
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] text-[#9C9589] font-medium block mb-1.5 uppercase tracking-wider">
+                          Nº Total de Parcelas
+                        </label>
+                        <CustomNumberInput
+                          value={totalInstallments}
+                          onChange={(val) => {
+                            setTotalInstallments(val);
+                            if (paidInstallments >= val) {
+                              setPaidInstallments(val - 1);
+                            }
+                          }}
+                          min={2}
+                          max={72}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-[#9C9589] font-medium block mb-1.5 uppercase tracking-wider">
+                          Parcelas Já Pagas
+                        </label>
+                        <CustomNumberInput
+                          value={paidInstallments}
+                          onChange={(val) => setPaidInstallments(Math.min(val, totalInstallments - 1))}
+                          min={0}
+                          max={totalInstallments - 1}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

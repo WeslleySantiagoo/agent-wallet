@@ -53,19 +53,22 @@ def processCardPurchase(db: Session, tx_data: TransactionCreate) -> List[Transac
         raise ValueError("Cartão de crédito não encontrado")
 
     total_installments = tx_data.total_installments if tx_data.is_installment and tx_data.total_installments else 1
+    paid_installments = getattr(tx_data, "paid_installments", 0) or 0
     total_amount = tx_data.amount
     installment_amount = round(total_amount / total_installments, 2)
     group_id = str(uuid.uuid4()) if total_installments > 1 else None
 
-    # Compromete o limite total imediatamente
-    card.used_limit += total_amount
+    # Compromete o limite apenas do que falta pagar
+    remaining_amount = total_amount - (paid_installments * installment_amount)
+    card.used_limit += max(0.0, remaining_amount)
 
     created_transactions = []
     base_date = tx_data.date or date.today()
 
-    for i in range(total_installments):
-        # Calcular mês de cada parcela
-        current_month = base_date.month + i
+    for i in range(paid_installments, total_installments):
+        # Calcular mês de cada parcela, começando no mês base (offset = 0 para a primeira não paga)
+        offset = i - paid_installments
+        current_month = base_date.month + offset
         current_year = base_date.year + (current_month - 1) // 12
         actual_month = ((current_month - 1) % 12) + 1
         

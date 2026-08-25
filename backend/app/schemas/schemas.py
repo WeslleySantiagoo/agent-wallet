@@ -100,8 +100,9 @@ class TransactionBase(BaseModel):
     category_id: Optional[int] = None
 
 class TransactionCreate(TransactionBase):
-    is_installment: bool = False
-    total_installments: Optional[int] = Field(default=1, ge=1)
+    is_installment: Optional[bool] = False
+    total_installments: Optional[int] = 1
+    paid_installments: Optional[int] = 0
 
 class TransactionResponse(TransactionBase):
     id: int
@@ -132,6 +133,7 @@ class DashboardSummary(BaseModel):
     recent_transactions: List[TransactionResponse]
     categories_breakdown: List[dict]
     monthly_evolution: List[dict] = []
+    daily_balance_60_days: List[dict] = []
 
 # --- Chat Session & Message Schemas ---
 class ChatMessageResponse(BaseModel):

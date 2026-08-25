@@ -49,19 +49,13 @@ export const Transactions = () => {
           <p className="text-xs text-[#9C9589]">Histórico completo de despesas, receitas e compras parceladas por instituição</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] cursor-pointer shadow-md transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Nova Transação</span>
-          </button>
-          <button
-            onClick={openChat}
-            className="px-4 py-2 rounded-xl bg-[#3C3D37] text-[#ECDFCC] text-xs font-semibold hover:bg-[#4A4B44] cursor-pointer border border-[#4A4B44] transition-all"
-          >
-            + Via IA
           </button>
         </div>
       </div>
@@ -167,6 +161,14 @@ export const Transactions = () => {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button for Mobile */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="md:hidden fixed bottom-[80px] right-4 w-14 h-14 bg-[#697565] text-[#ECDFCC] rounded-2xl shadow-xl flex items-center justify-center hover:bg-[#7A8674] transition-all z-30 shadow-[#697565]/30 cursor-pointer"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
       {/* Modal de Criar Transacao Manual */}
       <CreateTransactionModal

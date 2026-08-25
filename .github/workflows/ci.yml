@@ -78,3 +78,26 @@ jobs:
           GEMINI_API_KEY: test-mock-key
           NVIDIA_API_KEY: test-mock-key
         run: python -c "from app.main import app; print('FastAPI app importada com sucesso:', app.title)"
+
+  # ─────────────────────────────────────────────────────────────────
+  # 3) AUTO-MERGE — Merge automático se todos os checks passarem
+  # ─────────────────────────────────────────────────────────────────
+  auto-merge:
+    name: Auto-Merge PR
+    needs: [frontend-check, backend-check]
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.auto_merge == null
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Habilitar auto-merge no PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" \
+            --merge \
+            --auto \
+            --repo "${{ github.repository }}"
