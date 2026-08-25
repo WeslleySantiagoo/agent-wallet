@@ -58,6 +58,7 @@ export const importDatabase = (file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   }).then(res => res.data);
 };
-export const resetDatabaseApi = () => api.post('/reset').then(res => res.data);
+export const resetDatabaseApi = (options = { reset_all: true, targets: [] }) => 
+  api.post('/reset', options).then(res => res.data);
 
 export default api;

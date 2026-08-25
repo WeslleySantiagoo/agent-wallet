@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getAIProviders, getActiveChatSession, getChatSessions, createChatSession, activateChatSession, deleteChatSession } from '../services/api';
 import { useToast } from './ToastContext';
+import { isModelKeyConfigured } from '../components/ai/AIProviderSelector';
 
 const AIChatContext = createContext(null);
 
@@ -42,9 +43,17 @@ export const AIChatProvider = ({ children }) => {
       if (activeSess) {
         setActiveSessionId(activeSess.id);
         
-        // Restore last provider and model stored in DB for this session
-        if (activeSess.last_provider) setSelectedProvider(activeSess.last_provider);
-        if (activeSess.last_model) setSelectedModel(activeSess.last_model);
+        // Restore last provider and model stored in DB if valid key exists
+        if (activeSess.last_provider && activeSess.last_model) {
+          const mData = providersMap?.[activeSess.last_provider]?.[activeSess.last_model];
+          if (isModelKeyConfigured(mData)) {
+            setSelectedProvider(activeSess.last_provider);
+            setSelectedModel(activeSess.last_model);
+          } else {
+            setSelectedProvider('ParseFin AI');
+            setSelectedModel('parsefin-free');
+          }
+        }
 
         // Convert messages from DB format
         const formattedMsgs = (activeSess.messages || []).map(m => ({
