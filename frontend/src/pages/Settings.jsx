@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { exportDatabaseUrl, importDatabase, getAIProviders, updateAIProviders, getAIUsageStats, resetDatabaseApi } from '../services/api';
-import { Download, Upload, Cpu, Eye, EyeOff, Save, CheckCircle2, ShieldCheck, FileSpreadsheet, AlertTriangle, Activity, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw } from 'lucide-react';
+import { saveDatabaseToLocalStorage, getLocalStorageBackupInfo, restoreDatabaseFromLocalStorage } from '../utils/dbStorage';
+import { Download, Upload, Cpu, Eye, EyeOff, Save, CheckCircle2, ShieldCheck, FileSpreadsheet, AlertTriangle, Activity, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, HardDrive } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
 import { useToast } from '../context/ToastContext';
 import { CustomSelect } from '../components/common/CustomSelect';
@@ -20,6 +21,14 @@ const CollapsibleSection = ({ isOpen, children, className = '' }) => {
   );
 };
 
+const RESET_TARGET_OPTIONS = [
+  { id: 'transactions', label: 'Transações e Extrato', desc: 'Histórico completo de despesas, receitas e lançamentos', icon: '💸' },
+  { id: 'credit_cards', label: 'Cartões de Crédito e Faturas', desc: 'Cartões cadastrados, limites e faturas associadas', icon: '💳' },
+  { id: 'accounts', label: 'Contas Bancárias e Carteiras', desc: 'Contas de cheques, poupanças e investimentos', icon: '🏦' },
+  { id: 'categories', label: 'Categorias e Subcategorias', desc: 'Personalizações de categorias (recria as categorias padrão)', icon: '🏷️' },
+  { id: 'chat_history', label: 'Histórico de Conversas da IA', desc: 'Mensagens e conversas salvas no assistente de IA', icon: '🤖' },
+];
+
 export const Settings = () => {
   const { toast } = useToast();
   const [importing, setImporting] = useState(false);
@@ -30,6 +39,11 @@ export const Settings = () => {
   const [savingConfig, setSavingConfig] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
+  // LocalStorage Backup State
+  const [localBackupInfo, setLocalBackupInfo] = useState({ hasBackup: false, timestamp: null, sizeKB: 0 });
+  const [savingLocalBackup, setSavingLocalBackup] = useState(false);
+  const [restoringLocalBackup, setRestoringLocalBackup] = useState(false);
+
   // AI Usage State
   const [aiUsageStats, setAiUsageStats] = useState(null);
   const [isUsageLoading, setIsUsageLoading] = useState(false);
@@ -43,15 +57,25 @@ export const Settings = () => {
   // Danger Zone State
   const [showDangerZone, setShowDangerZone] = useState(false);
 
-  // Reset DB State & Confirmation Modal
+  // Reset DB State & Selective Reset Target Selection
   const [showResetModal, setShowResetModal] = useState(false);
   const [confirmResetInput, setConfirmResetInput] = useState('');
   const [resetting, setResetting] = useState(false);
-  
+  const [selectedResetTargets, setSelectedResetTargets] = useState([
+    'transactions', 'credit_cards', 'accounts', 'categories', 'chat_history'
+  ]);
+
   const { providersData, setProvidersData, reloadProviders } = useAIChat();
+
+  const refreshLocalBackupInfo = () => {
+    setLocalBackupInfo(getLocalStorageBackupInfo());
+  };
 
   useEffect(() => {
     loadConfig();
+    refreshLocalBackupInfo();
+    // Tenta salvar auto-backup no LocalStorage ao carregar a página para garantia de persistência
+    saveDatabaseToLocalStorage().then(() => refreshLocalBackupInfo()).catch(() => {});
   }, []);
 
   const loadUsageStats = async () => {
@@ -114,6 +138,32 @@ export const Settings = () => {
     document.body.removeChild(link);
   };
 
+  const handleSaveLocalBackup = async () => {
+    setSavingLocalBackup(true);
+    try {
+      const info = await saveDatabaseToLocalStorage();
+      refreshLocalBackupInfo();
+      toast.success(`Backup do banco salvo no Local Storage (${info.timestamp})!`);
+    } catch (err) {
+      toast.error("Erro ao salvar backup no Local Storage.");
+    } finally {
+      setSavingLocalBackup(false);
+    }
+  };
+
+  const handleRestoreLocalBackup = async () => {
+    setRestoringLocalBackup(true);
+    try {
+      await restoreDatabaseFromLocalStorage();
+      toast.success("Banco de dados restaurado com sucesso a partir do Local Storage!");
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (err) {
+      toast.error("Erro ao restaurar backup do Local Storage: " + err.message);
+    } finally {
+      setRestoringLocalBackup(false);
+    }
+  };
+
   const processImportFile = async (file) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.db')) {
@@ -129,6 +179,7 @@ export const Settings = () => {
       const res = await importDatabase(file);
       setImportStatus('✅ ' + (res.message || 'Banco de dados importado com sucesso! Recarregando...'));
       toast.success('Banco de dados importado com sucesso!');
+      await saveDatabaseToLocalStorage().catch(() => {});
       setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       const errDetail = err.response?.data?.detail || err.message;
@@ -223,18 +274,46 @@ export const Settings = () => {
     }
   };
 
+  const handleToggleResetTarget = (targetId) => {
+    setSelectedResetTargets(prev => {
+      if (prev.includes(targetId)) {
+        return prev.filter(id => id !== targetId);
+      } else {
+        return [...prev, targetId];
+      }
+    });
+  };
+
+  const handleToggleAllResetTargets = () => {
+    if (selectedResetTargets.length === RESET_TARGET_OPTIONS.length) {
+      setSelectedResetTargets([]);
+    } else {
+      setSelectedResetTargets(RESET_TARGET_OPTIONS.map(o => o.id));
+    }
+  };
+
   const handleResetDatabase = async () => {
     if (confirmResetInput.trim().toUpperCase() !== 'RESETAR') return;
+    if (selectedResetTargets.length === 0) {
+      toast.error("Selecione pelo menos um módulo para resetar.");
+      return;
+    }
+
     setResetting(true);
     try {
-      await resetDatabaseApi();
-      toast.success("Banco de dados resetado com sucesso!");
-      window.location.reload();
+      const isAll = selectedResetTargets.length === RESET_TARGET_OPTIONS.length;
+      await resetDatabaseApi({
+        reset_all: isAll,
+        targets: selectedResetTargets
+      });
+      toast.success("Reset concluído com sucesso!");
+      setShowResetModal(false);
+      await saveDatabaseToLocalStorage().catch(() => {});
+      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       toast.error("Erro ao resetar banco de dados: " + (err.response?.data?.detail || err.message));
     } finally {
       setResetting(false);
-      setShowResetModal(false);
     }
   };
 
@@ -305,6 +384,49 @@ export const Settings = () => {
               <input type="file" accept=".db" onChange={handleImportInputChange} className="hidden" />
             </label>
           </div>
+
+          {/* Local Storage Backup Card */}
+          <div className="bg-[#181C14] p-5 rounded-xl border border-[#3C3D37] flex flex-col justify-between col-span-1 sm:col-span-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-semibold text-[#ECDFCC]">Backup Automático no Navegador (Local Storage)</h3>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-[#697565]/20 text-[#697565] border border-[#697565]/30">
+                    Segurança Local
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#9C9589] mt-1">
+                  Guarda uma cópia de segurança do arquivo .db no Local Storage para recuperação sem perda de dados.
+                </p>
+                {localBackupInfo.hasBackup && (
+                  <p className="text-[10px] text-[#697565] font-mono mt-1">
+                    Último backup no navegador: {localBackupInfo.timestamp} ({localBackupInfo.sizeKB} KB)
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSaveLocalBackup}
+                  disabled={savingLocalBackup}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-semibold border border-[#4A4B44] transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {savingLocalBackup ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Salvar Agora</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRestoreLocalBackup}
+                  disabled={!localBackupInfo.hasBackup || restoringLocalBackup}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#697565] hover:bg-[#7A8674] disabled:opacity-40 text-[#ECDFCC] text-xs font-semibold transition-colors cursor-pointer shadow-md"
+                >
+                  {restoringLocalBackup ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <HardDrive className="w-3.5 h-3.5" />}
+                  <span>Restaurar do Local Storage</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {dragError && (
@@ -319,235 +441,257 @@ export const Settings = () => {
         )}
       </section>
 
-      {/* AI Usage Stats (Positioned ABOVE AI Providers, with Reload Button) */}
-      <section className="card-glow p-6 border border-[#3C3D37] space-y-6">
+      {/* Consumo de Tokens & Custo Estimado da IA */}
+      <section className="card-glow p-6 border border-[#3C3D37] space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#697565]/20 flex items-center justify-center text-[#697565]">
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#ECDFCC]">Estatísticas de Uso da IA</h2>
-              <p className="text-xs text-[#9C9589]">Métricas globais de requisições, tokens e performance</p>
+              <h2 className="text-sm font-bold text-[#ECDFCC]">Consumo de Tokens & Custos de IA</h2>
+              <p className="text-xs text-[#9C9589]">Estatísticas de chamadas e estimativa de gastos por modelo</p>
             </div>
           </div>
 
           <button
             onClick={loadUsageStats}
             disabled={isUsageLoading}
-            title="Recarregar estatísticas de uso"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-medium border border-[#4A4B44] transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-[#181C14] hover:bg-[#3C3D37] text-[#9C9589] hover:text-[#ECDFCC] border border-[#3C3D37] transition-colors cursor-pointer"
+            title="Atualizar estatísticas"
           >
             <RefreshCw className={`w-4 h-4 ${isUsageLoading ? 'animate-spin text-[#697565]' : ''}`} />
-            <span className="hidden sm:inline">Atualizar</span>
           </button>
         </div>
 
-        {isUsageLoading && !aiUsageStats ? (
-          <div className="text-xs text-[#9C9589] animate-pulse">Carregando métricas...</div>
-        ) : aiUsageStats ? (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[#181C14] border border-[#3C3D37] p-4 rounded-xl">
-                <p className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider">Total de Tokens</p>
-                <p className="text-lg font-bold text-[#ECDFCC] mt-1">{aiUsageStats.total_tokens?.toLocaleString()}</p>
-              </div>
-              <div className="bg-[#181C14] border border-[#3C3D37] p-4 rounded-xl">
-                <p className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider">Tokens p/ Min (TPM)</p>
-                <p className="text-lg font-bold text-[#ECDFCC] mt-1">{aiUsageStats.global_tpm?.toLocaleString()}</p>
-              </div>
-              <div className="bg-[#181C14] border border-[#3C3D37] p-4 rounded-xl">
-                <p className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider">Reqs p/ Min (RPM)</p>
-                <p className="text-lg font-bold text-[#ECDFCC] mt-1">{aiUsageStats.global_rpm}</p>
-              </div>
-              <div className="bg-[#181C14] border border-[#3C3D37] p-4 rounded-xl">
-                <p className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider">Reqs p/ Dia (RPD)</p>
-                <p className="text-lg font-bold text-[#ECDFCC] mt-1">{aiUsageStats.global_rpd}</p>
-              </div>
+        {/* Resumo em Cards Minimalistas */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-[#181C14] p-3.5 rounded-xl border border-[#3C3D37]">
+            <span className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider block">Total Chamadas</span>
+            <p className="text-lg font-bold text-[#ECDFCC] mt-0.5">{aiUsageStats?.total_calls || 0}</p>
+          </div>
+          <div className="bg-[#181C14] p-3.5 rounded-xl border border-[#3C3D37]">
+            <span className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider block">Tokens Entrada</span>
+            <p className="text-lg font-bold text-[#ECDFCC] mt-0.5">{(aiUsageStats?.total_input_tokens || 0).toLocaleString('pt-BR')}</p>
+          </div>
+          <div className="bg-[#181C14] p-3.5 rounded-xl border border-[#3C3D37]">
+            <span className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider block">Tokens Saída</span>
+            <p className="text-lg font-bold text-[#ECDFCC] mt-0.5">{(aiUsageStats?.total_output_tokens || 0).toLocaleString('pt-BR')}</p>
+          </div>
+          <div className="bg-[#181C14] p-3.5 rounded-xl border border-[#3C3D37]">
+            <span className="text-[10px] text-[#9C9589] font-semibold uppercase tracking-wider block">Custo Total (USD)</span>
+            <p className="text-lg font-bold text-[#4CAF50] mt-0.5">
+              ${(aiUsageStats?.total_estimated_cost_usd || 0).toFixed(4)}
+            </p>
+          </div>
+        </div>
+
+        {/* Detalhamento Expansível por Modelo com Ordenação de Colunas */}
+        <div className="border border-[#3C3D37] rounded-xl bg-[#181C14] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setUsageExpanded(!usageExpanded)}
+            className="w-full p-3.5 flex items-center justify-between text-left hover:bg-[#3C3D37]/30 transition-colors cursor-pointer"
+          >
+            <span className="text-xs font-semibold text-[#ECDFCC]">Detalhamento por Modelo de IA</span>
+            <div className="flex items-center gap-2 text-[#9C9589]">
+              <span className="text-[10px]">{sortedModels.length} modelos utilizados</span>
+              <ChevronDown 
+                className={`w-4 h-4 transition-transform duration-500 ${usageExpanded ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
+              />
             </div>
+          </button>
 
-            <div className="bg-[#181C14] border border-[#3C3D37] rounded-xl overflow-hidden">
-              <button 
-                onClick={() => setUsageExpanded(!usageExpanded)}
-                className="w-full p-4 flex items-center justify-between hover:bg-[#3C3D37]/40 transition-colors cursor-pointer"
-              >
-                <span className="text-xs font-bold text-[#ECDFCC]">Uso Detalhado por Modelo</span>
-                <ChevronDown 
-                  className={`w-4 h-4 text-[#9C9589] transition-transform duration-500 ${usageExpanded ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
-                />
-              </button>
-
-              <CollapsibleSection isOpen={usageExpanded} className="p-4 pt-0 border-t border-[#3C3D37] overflow-x-auto">
-                <table className="w-full text-left text-xs text-[#9C9589] min-w-[700px] mt-4">
-                  <thead className="border-b border-[#3C3D37]">
+          <CollapsibleSection isOpen={usageExpanded} className="border-t border-[#3C3D37]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-[#1E2218] text-[#9C9589] font-mono text-[10px] uppercase border-b border-[#3C3D37]">
+                    <th onClick={() => handleSort('model_name')} className="py-2.5 px-3.5 cursor-pointer select-none hover:text-[#ECDFCC]">
+                      <div className="flex items-center gap-1">
+                        <span>Modelo</span>
+                        {sortColumn === 'model_name' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('calls')} className="py-2.5 px-3.5 text-right cursor-pointer select-none hover:text-[#ECDFCC]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Chamadas</span>
+                        {sortColumn === 'calls' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('input_tokens')} className="py-2.5 px-3.5 text-right cursor-pointer select-none hover:text-[#ECDFCC]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Input Tokens</span>
+                        {sortColumn === 'input_tokens' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('output_tokens')} className="py-2.5 px-3.5 text-right cursor-pointer select-none hover:text-[#ECDFCC]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Output Tokens</span>
+                        {sortColumn === 'output_tokens' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('estimated_cost_usd')} className="py-2.5 px-3.5 text-right cursor-pointer select-none hover:text-[#ECDFCC]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Custo USD</span>
+                        {sortColumn === 'estimated_cost_usd' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#3C3D37]">
+                  {sortedModels.length === 0 ? (
                     <tr>
-                      {[
-                        { key: 'provider', label: 'Provedor' },
-                        { key: 'model', label: 'Modelo' },
-                        { key: 'requests', label: 'Requisições' },
-                        { key: 'input_tokens', label: 'In Tokens' },
-                        { key: 'output_tokens', label: 'Out Tokens' },
-                        { key: 'total_tokens', label: 'Total Tokens' },
-                        { key: 'rpm', label: 'RPM' },
-                        { key: 'tpm', label: 'TPM' },
-                        { key: 'rpd', label: 'RPD' }
-                      ].map((col) => (
-                        <th 
-                          key={col.key} 
-                          className="p-2 cursor-pointer hover:text-[#ECDFCC] transition-colors whitespace-nowrap"
-                          onClick={() => handleSort(col.key)}
-                        >
-                          <div className="flex items-center gap-1">
-                            {col.label}
-                            {sortColumn === col.key ? (
-                              sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#697565]" /> : <ArrowDown className="w-3 h-3 text-[#697565]" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                      ))}
+                      <td colSpan="5" className="py-4 text-center text-[11px] text-[#9C9589]">
+                        Nenhum registro de chamada até o momento.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {sortedModels.map((m, idx) => (
-                      <tr key={idx} className="border-b border-[#3C3D37]/40 hover:bg-[#3C3D37]/20 transition-colors">
-                        <td className="p-2 font-semibold text-[#ECDFCC]">{m.provider}</td>
-                        <td className="p-2 font-mono text-[10px]">{m.model}</td>
-                        <td className="p-2">{m.requests}</td>
-                        <td className="p-2 text-[#4CAF50]">{m.input_tokens?.toLocaleString()}</td>
-                        <td className="p-2 text-[#2196F3]">{m.output_tokens?.toLocaleString()}</td>
-                        <td className="p-2 font-semibold text-[#ECDFCC]">{m.total_tokens?.toLocaleString()}</td>
-                        <td className="p-2">{m.rpm}</td>
-                        <td className="p-2">{m.tpm?.toLocaleString()}</td>
-                        <td className="p-2">{m.rpd}</td>
+                  ) : (
+                    sortedModels.map((m, idx) => (
+                      <tr key={idx} className="hover:bg-[#3C3D37]/20">
+                        <td className="py-2.5 px-3.5 font-medium text-[#ECDFCC] font-mono text-[11px]">
+                          {m.model_name}
+                          <span className="block text-[9px] text-[#9C9589] font-sans">{m.provider}</span>
+                        </td>
+                        <td className="py-2.5 px-3.5 text-right text-[#ECDFCC] font-mono">{m.calls}</td>
+                        <td className="py-2.5 px-3.5 text-right text-[#9C9589] font-mono">{m.input_tokens.toLocaleString('pt-BR')}</td>
+                        <td className="py-2.5 px-3.5 text-right text-[#9C9589] font-mono">{m.output_tokens.toLocaleString('pt-BR')}</td>
+                        <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#4CAF50]">
+                          ${m.estimated_cost_usd.toFixed(4)}
+                        </td>
                       </tr>
-                    ))}
-                    {sortedModels.length === 0 && (
-                      <tr>
-                        <td colSpan="9" className="p-4 text-center text-xs opacity-50">Nenhum uso registrado.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </CollapsibleSection>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </>
-        ) : (
-          <div className="text-xs text-[#9C9589]">Nenhuma métrica disponível.</div>
-        )}
+          </CollapsibleSection>
+        </div>
       </section>
 
-      {/* Dynamic AI Providers & Models Configuration (Expandable, DEFAULT COLLAPSED) */}
+      {/* AI Providers Section with Collapsible Provider Accordions */}
       <section className="card-glow p-6 border border-[#3C3D37] space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#697565]/20 flex items-center justify-center text-[#697565]">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#ECDFCC]">Provedores e Modelos de IA</h2>
-              <p className="text-xs text-[#9C9589]">Clique no provedor para expandir e gerenciar suas API Keys</p>
+              <h2 className="text-sm font-bold text-[#ECDFCC]">Provedores & Modelos de IA</h2>
+              <p className="text-xs text-[#9C9589]">Insira suas API Keys locais. Elas ficam armazenadas exclusivamente no seu SQLite</p>
             </div>
           </div>
 
           <button
             onClick={handleSaveAIConfig}
             disabled={savingConfig}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] transition-all shadow-md cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#697565] hover:bg-[#7A8674] text-[#ECDFCC] text-xs font-bold transition-all shadow-md cursor-pointer shrink-0"
           >
-            {saveSuccess ? <CheckCircle2 className="w-4 h-4 text-[#4CAF50]" /> : <Save className="w-4 h-4" />}
-            <span>{savingConfig ? 'Salvando...' : saveSuccess ? 'Salvo!' : 'Salvar Configurações'}</span>
+            {savingConfig ? <RefreshCw className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4 text-[#4CAF50]" /> : <Save className="w-4 h-4" />}
+            <span>{savingConfig ? 'Salvando...' : saveSuccess ? 'Salvo!' : 'Salvar Alterações'}</span>
           </button>
         </div>
 
-        <div className="space-y-3">
-          {Object.entries(providersData || {}).map(([providerName, modelsDict]) => {
-            const isExpanded = expandedProviders[providerName] ?? false;
+        {/* Dynamic Accordions by AI Provider */}
+        <div className="space-y-4">
+          {Object.entries(providersData).map(([providerName, modelsDict]) => {
+            const isExpanded = expandedProviders[providerName] || false;
             const modelsCount = Object.keys(modelsDict || {}).length;
 
             return (
-              <div key={providerName} className="bg-[#181C14] rounded-xl border border-[#3C3D37] overflow-hidden transition-all">
-                {/* Clickable Header for Collapsible Provider */}
-                <div
+              <div key={providerName} className="border border-[#3C3D37] rounded-xl bg-[#181C14] overflow-hidden">
+                {/* Header do Accordion do Provedor */}
+                <button
+                  type="button"
                   onClick={() => toggleProviderExpanded(providerName)}
-                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-[#3C3D37]/40 transition-colors"
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-[#3C3D37]/30 transition-colors cursor-pointer select-none"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-[#ECDFCC]">{providerName}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3C3D37] text-[#9C9589]">
-                      {modelsCount} modelo{modelsCount !== 1 ? 's' : ''}
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-[#ECDFCC]">{providerName}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-[#3C3D37] text-[#9C9589]">
+                      {modelsCount} {modelsCount === 1 ? 'modelo' : 'modelos'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#697565] uppercase tracking-wider font-mono hidden sm:inline">{providerName}</span>
+
+                  <div className="flex items-center gap-2 text-[#9C9589]">
+                    <span className="text-[10px] hidden sm:inline">{isExpanded ? 'Ocultar modelos' : 'Ver modelos'}</span>
                     <ChevronDown 
-                      className={`w-4 h-4 text-[#9C9589] transition-transform duration-500 ${isExpanded ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
+                      className={`w-4 h-4 transition-transform duration-500 ${isExpanded ? 'rotate-180 text-[#ECDFCC]' : 'rotate-0'}`} 
                     />
                   </div>
-                </div>
+                </button>
 
-                {/* Expandable Content com animação de altura CSS Grid */}
-                <CollapsibleSection isOpen={isExpanded} className="p-4 pt-0 border-t border-[#3C3D37]/50 space-y-3 mt-3">
-                  {Object.entries(modelsDict || {}).map(([modelId, modelData]) => {
+                {/* Conteúdo Expansível com Animação Suave */}
+                <CollapsibleSection isOpen={isExpanded} className="p-4 border-t border-[#3C3D37] space-y-4 bg-[#1E2218]/40">
+                  {Object.entries(modelsDict).map(([modelId, mData]) => {
                     let displayName = modelId;
-                    let inputType = 'text';
-                    let rawKey = false;
+                    let inputTypeVal = 'text';
+                    let apiKeyVal = '';
+                    let isSystemFree = false;
 
-                    if (typeof modelData === 'object' && modelData !== null && !Array.isArray(modelData)) {
-                      displayName = modelData.name || modelId;
-                      inputType = modelData.input_type || 'text';
-                      rawKey = modelData.api_key;
-                    } else if (Array.isArray(modelData)) {
-                      displayName = modelData[0];
-                      rawKey = modelData[modelData.length - 1];
+                    if (typeof mData === 'object' && mData !== null && !Array.isArray(mData)) {
+                      displayName = mData.name || modelId;
+                      inputTypeVal = mData.input_type || 'text';
+                      apiKeyVal = typeof mData.api_key === 'string' ? mData.api_key : '';
+                      isSystemFree = mData.is_system_free || false;
+                    } else if (Array.isArray(mData)) {
+                      displayName = mData[0];
+                      apiKeyVal = typeof mData[mData.length - 1] === 'string' ? mData[mData.length - 1] : '';
                     }
 
-                    const apiKeyVal = (typeof rawKey === 'string' && rawKey !== 'false') ? rawKey : '';
-                    const uniqueKey = `${providerName}-${modelId}`;
+                    const modelKeyStr = `${providerName}-${modelId}`;
+                    const isVisible = showKeys[modelKeyStr];
 
                     return (
-                      <div key={modelId} className="bg-[#3C3D37]/40 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 border border-[#4A4B44]/40">
-                        <div>
+                      <div key={modelId} className="bg-[#181C14] p-4 rounded-xl border border-[#3C3D37] space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <p className="text-xs font-bold text-[#ECDFCC]">{displayName}</p>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#697565]/30 text-[#ECDFCC] border border-[#697565]">
-                              {inputType}
-                            </span>
+                            <span className="text-xs font-bold text-[#ECDFCC]">{displayName}</span>
+                            <span className="text-[10px] font-mono text-[#9C9589]">({modelId})</span>
+                            {isSystemFree && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-[#697565]/20 text-[#697565] border border-[#697565]/30">
+                                Grátis do Sistema
+                              </span>
+                            )}
                           </div>
-                          <span className="text-[10px] text-[#9C9589] font-mono">{modelId}</span>
-                        </div>
 
-                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
-                          {/* Custom Select Dropdown no lugar do select nativo */}
-                          {typeof modelData === 'object' && !Array.isArray(modelData) && (
+                          {/* Seletor Customizado de Formato de Input (Texto, Áudio, Multimodal) */}
+                          <div className="w-full sm:w-44">
                             <CustomSelect
-                              value={inputType}
-                              onChange={(newVal) => handleInputTypeChange(providerName, modelId, newVal)}
+                              value={inputTypeVal}
+                              onChange={(val) => handleInputTypeChange(providerName, modelId, val)}
                               options={[
-                                { value: 'text', label: 'text' },
-                                { value: 'audio', label: 'audio' },
-                                { value: 'multimodal', label: 'multimodal' }
+                                { value: 'text', label: 'Texto' },
+                                { value: 'audio', label: 'Áudio (Voz)' },
+                                { value: 'multimodal', label: 'Multimodal' }
                               ]}
                             />
-                          )}
+                          </div>
+                        </div>
 
-                          {/* API Key Input */}
-                          <div className="flex-1 sm:w-64 flex items-center bg-[#181C14] border border-[#4A4B44] rounded-xl px-3 py-2 focus-within:border-[#697565]">
+                        {/* Input da API Key */}
+                        <div>
+                          <label className="text-[10px] text-[#9C9589] font-medium block mb-1 uppercase tracking-wider">
+                            API Key
+                          </label>
+                          <div className="relative flex items-center">
                             <input
-                              type={showKeys[uniqueKey] ? 'text' : 'password'}
+                              type={isVisible ? "text" : "password"}
+                              placeholder={isSystemFree ? "Chave gerenciada pelo sistema (Gratuito)" : "Ex: AIzaSy... (deixe em branco se não possui)"}
                               value={apiKeyVal}
+                              disabled={isSystemFree}
                               onChange={(e) => handleApiKeyChange(providerName, modelId, e.target.value)}
-                              placeholder="Insira a API Key"
-                              className="w-full bg-transparent text-xs text-[#ECDFCC] outline-none placeholder-[#9C9589]"
+                              className="w-full bg-[#1E2218] text-xs text-[#ECDFCC] px-3 py-2 pr-10 rounded-xl border border-[#3C3D37] outline-none focus:border-[#697565] transition-all font-mono disabled:opacity-60"
                             />
-                            <button
-                              type="button"
-                              onClick={() => toggleKeyVisibility(uniqueKey)}
-                              className="text-[#9C9589] hover:text-[#ECDFCC] ml-2 cursor-pointer"
-                            >
-                              {showKeys[uniqueKey] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
+                            {!isSystemFree && (
+                              <button
+                                type="button"
+                                onClick={() => toggleKeyVisibility(modelKeyStr)}
+                                className="absolute right-3 text-[#9C9589] hover:text-[#ECDFCC] transition-colors"
+                              >
+                                {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -571,7 +715,7 @@ export const Settings = () => {
             <AlertTriangle className="w-4 h-4 text-[#E57373]" />
             <div>
               <h3 className="text-xs font-bold text-[#E57373]">Zona de Perigo (Ações Destrutivas)</h3>
-              <p className="text-[11px] text-[#9C9589]">Opções avançadas de sistema e redefinição total de dados</p>
+              <p className="text-[11px] text-[#9C9589]">Opções avançadas de redefinição seletiva ou total de dados</p>
             </div>
           </div>
           <ChevronDown 
@@ -582,15 +726,16 @@ export const Settings = () => {
         <CollapsibleSection isOpen={showDangerZone} className="p-4 border-t border-[#E57373]/20 bg-[#E57373]/5 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#181C14] p-4 rounded-xl border border-[#E57373]/30 mt-3">
             <div>
-              <h4 className="text-xs font-bold text-[#ECDFCC]">Resetar Todo o Banco de Dados Local</h4>
+              <h4 className="text-xs font-bold text-[#ECDFCC]">Resetar Dados do Sistema</h4>
               <p className="text-[11px] text-[#9C9589] mt-0.5">
-                Apaga de forma irreversível todas as suas contas, cartões, faturas, lançamentos e histórico de IA.
+                Escolha e apague seletivamente ou totalmente suas contas, cartões, faturas, lançamentos e conversas de IA.
               </p>
             </div>
             <button
               type="button"
               onClick={() => {
                 setConfirmResetInput('');
+                setSelectedResetTargets(['transactions', 'credit_cards', 'accounts', 'categories', 'chat_history']);
                 setShowResetModal(true);
               }}
               className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#E57373]/20 hover:bg-[#E57373]/40 text-[#E57373] text-xs font-semibold border border-[#E57373]/50 transition-colors shrink-0 cursor-pointer"
@@ -602,38 +747,85 @@ export const Settings = () => {
         </CollapsibleSection>
       </section>
 
-      {/* Sensitive Reset Database Modal Confirmation */}
+      {/* Sensitive Reset Database Modal Confirmation com Escolha Seletiva */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#181C14] border border-[#E57373]/50 rounded-2xl p-6 max-w-md w-full space-y-5 shadow-2xl transition-all duration-300 transform scale-100">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#E57373]/20 flex items-center justify-center text-[#E57373]">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#ECDFCC]">Resetar Banco de Dados</h3>
-                <p className="text-xs text-[#E57373]">Ação irreversível de alto impacto</p>
+          <div className="bg-[#181C14] border border-[#E57373]/50 rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl transition-all duration-300 transform scale-100 max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[#3C3D37] pb-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E57373]/20 flex items-center justify-center text-[#E57373] shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#ECDFCC]">Resetar Banco de Dados</h3>
+                  <p className="text-xs text-[#E57373]">Selecione quais informações deseja apagar</p>
+                </div>
               </div>
             </div>
 
-            <p className="text-xs text-[#9C9589] leading-relaxed">
-              Esta ação irá apagar <strong>definitivamente</strong> todas as suas contas, cartões, faturas, lançamentos e históricos de conversa de IA.
-            </p>
+            <div className="overflow-y-auto space-y-4 pr-1 flex-1">
+              <p className="text-xs text-[#9C9589] leading-relaxed">
+                Marque abaixo as informações em alto nível que você deseja remover do seu sistema.
+              </p>
 
-            <div className="space-y-2 bg-[#E57373]/10 p-3 rounded-xl border border-[#E57373]/20">
-              <label className="text-[11px] font-semibold text-[#ECDFCC] block">
-                Para confirmar, digite <span className="text-[#E57373] font-mono">RESETAR</span> abaixo:
-              </label>
-              <input
-                type="text"
-                value={confirmResetInput}
-                onChange={(e) => setConfirmResetInput(e.target.value)}
-                placeholder="RESETAR"
-                className="w-full bg-[#181C14] border border-[#E57373]/40 rounded-xl px-3 py-2 text-xs text-[#ECDFCC] font-mono outline-none focus:border-[#E57373]"
-              />
+              {/* Lista Seletiva de Entidades */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1 pb-1 border-b border-[#3C3D37]/60 text-xs text-[#9C9589]">
+                  <span className="font-semibold text-[11px] uppercase tracking-wider">Informações Salvas</span>
+                  <button
+                    type="button"
+                    onClick={handleToggleAllResetTargets}
+                    className="text-[11px] text-[#697565] hover:text-[#ECDFCC] font-semibold cursor-pointer"
+                  >
+                    {selectedResetTargets.length === RESET_TARGET_OPTIONS.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                  </button>
+                </div>
+
+                {RESET_TARGET_OPTIONS.map(opt => {
+                  const isChecked = selectedResetTargets.includes(opt.id);
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleToggleResetTarget(opt.id)}
+                      className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                        isChecked
+                          ? 'bg-[#E57373]/10 border-[#E57373]/50 text-[#ECDFCC]'
+                          : 'bg-[#181C14] border-[#3C3D37] text-[#9C9589] hover:border-[#697565]/40'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {}}
+                        className="mt-0.5 accent-[#E57373] w-4 h-4 cursor-pointer"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{opt.icon}</span>
+                          <span className="text-xs font-bold text-[#ECDFCC]">{opt.label}</span>
+                        </div>
+                        <p className="text-[11px] text-[#9C9589] mt-0.5">{opt.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2 bg-[#E57373]/10 p-3 rounded-xl border border-[#E57373]/20">
+                <label className="text-[11px] font-semibold text-[#ECDFCC] block">
+                  Para confirmar o reset dos itens selecionados, digite <span className="text-[#E57373] font-mono">RESETAR</span> abaixo:
+                </label>
+                <input
+                  type="text"
+                  value={confirmResetInput}
+                  onChange={(e) => setConfirmResetInput(e.target.value)}
+                  placeholder="RESETAR"
+                  className="w-full bg-[#181C14] border border-[#E57373]/40 rounded-xl px-3 py-2 text-xs text-[#ECDFCC] font-mono outline-none focus:border-[#E57373]"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#3C3D37] shrink-0">
               <button
                 type="button"
                 onClick={() => setShowResetModal(false)}
@@ -643,7 +835,7 @@ export const Settings = () => {
               </button>
               <button
                 type="button"
-                disabled={confirmResetInput.trim().toUpperCase() !== 'RESETAR' || resetting}
+                disabled={confirmResetInput.trim().toUpperCase() !== 'RESETAR' || selectedResetTargets.length === 0 || resetting}
                 onClick={handleResetDatabase}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E57373] hover:bg-[#D32F2F] disabled:opacity-40 text-white text-xs font-semibold transition-colors shadow-lg cursor-pointer"
               >

@@ -5,6 +5,8 @@ import { AIMessage } from './AIMessage';
 import { AIChatInputBar } from './AIChatInputBar';
 import { sendAIChat } from '../../services/api';
 
+import { AILoadingMessage } from './AILoadingMessage';
+
 export const AISidebar = () => {
   const {
     isChatOpen, closeChat, messages, setMessages,
@@ -179,12 +181,7 @@ export const AISidebar = () => {
             <AIMessage key={msg.id} msg={msg} />
           ))
         )}
-        {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-[#9C9589] p-3 bg-[#2A2E24] rounded-2xl w-fit">
-            <RefreshCw className="w-4 h-4 animate-spin text-[#697565]" />
-            <span>Processando solicitação...</span>
-          </div>
-        )}
+        {isLoading && <AILoadingMessage />}
         <div ref={messagesEndRef} />
       </div>
 

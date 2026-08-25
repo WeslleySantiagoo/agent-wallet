@@ -2,6 +2,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAIChat } from '../../context/AIChatContext';
 import { Cpu, ChevronUp, Check, Sparkles } from 'lucide-react';
 
+export const isModelKeyConfigured = (mData) => {
+  if (!mData) return false;
+  if (typeof mData === 'object' && !Array.isArray(mData)) {
+    if (mData.is_system_free === true) return true;
+    if (mData.api_key === true) return true;
+    if (typeof mData.api_key === 'string') {
+      const keyStr = mData.api_key.trim();
+      return keyStr.length > 0 && keyStr !== 'false';
+    }
+    return false;
+  }
+  if (Array.isArray(mData)) {
+    const key = mData[mData.length - 1];
+    return typeof key === 'string' && key.length > 0 && key !== 'false';
+  }
+  return false;
+};
+
 export const AIProviderSelector = () => {
   const { selectedProvider, setSelectedProvider, selectedModel, setSelectedModel, providersData } = useAIChat();
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +78,7 @@ export const AIProviderSelector = () => {
         }`}
       >
         {providerEntries.map(([pName, modelsDict]) => {
-          const modelEntries = Object.entries(modelsDict || {});
+          const modelEntries = Object.entries(modelsDict || {}).filter(([_, mData]) => isModelKeyConfigured(mData));
           if (modelEntries.length === 0) return null;
 
           return (
