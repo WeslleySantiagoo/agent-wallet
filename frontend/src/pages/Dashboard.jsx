@@ -65,7 +65,7 @@ export const Dashboard = () => {
 
       {/* Modular Cards Grid */}
       <div className="grid grid-cols-1 min-[440px]:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
-        <div className="col-span-2 lg:col-span-1">
+        <div className="col-span-1 min-[440px]:col-span-2 lg:col-span-1">
           <BalanceCard
             totalBalance={summary?.total_balance || 0}
             accountsCount={summary?.active_accounts_count || 0}
@@ -112,10 +112,10 @@ export const Dashboard = () => {
 
       {/* Third Row: Chart + Table */}
       <div className="grid grid-cols-1 min-[440px]:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
-        <div className="col-span-2 lg:col-span-2">
+        <div className="col-span-1 min-[440px]:col-span-2 lg:col-span-2">
           <EvolutionChart data={summary?.monthly_evolution || []} />
         </div>
-        <div className="col-span-2 lg:col-span-1">
+        <div className="col-span-1 min-[440px]:col-span-2 lg:col-span-1">
           <RecentTransactions transactions={summary?.recent_transactions || []} />
         </div>
       </div>
