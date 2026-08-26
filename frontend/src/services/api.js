@@ -21,6 +21,7 @@ export const payInvoice = (cardId, invoiceId, accountId) => api.post(`/credit-ca
 
 export const getTransactions = (limit = 100, offset = 0) => api.get(`/transactions?limit=${limit}&offset=${offset}`).then(res => res.data);
 export const createTransaction = (data) => api.post('/transactions', data).then(res => res.data);
+export const updateTransaction = (id, data) => api.put(`/transactions/${id}`, data).then(res => res.data);
 export const deleteTransaction = (id) => api.delete(`/transactions/${id}`);
 
 export const getCategories = () => api.get('/categories').then(res => res.data);

@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { getTransactions, deleteTransaction } from '../services/api';
-import { Receipt, Trash2, ArrowUpRight, ArrowDownRight, CreditCard, RefreshCw } from 'lucide-react';
+import { Receipt, Trash2, Pencil, ArrowUpRight, ArrowDownRight, CreditCard, RefreshCw, Plus } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
 import { useToast } from '../context/ToastContext';
 import { getInstitutionLogo } from '../utils/institutions';
 
 import { CreateTransactionModal } from '../components/transactions/CreateTransactionModal';
-import { Plus } from 'lucide-react';
 
 export const Transactions = () => {
   const { toast } = useToast();
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTx, setEditingTx] = useState(null);
   const { openChat } = useAIChat();
 
   const load = async () => {
@@ -30,6 +30,16 @@ export const Transactions = () => {
   useEffect(() => {
     load();
   }, []);
+
+  const handleEdit = (t) => {
+    setEditingTx(t);
+    setShowCreateModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setEditingTx(null);
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -51,7 +61,10 @@ export const Transactions = () => {
 
         <div className="hidden md:flex items-center gap-2">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setEditingTx(null);
+              setShowCreateModal(true);
+            }}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#697565] text-[#ECDFCC] text-xs font-semibold hover:bg-[#7A8674] cursor-pointer shadow-md transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -146,12 +159,22 @@ export const Transactions = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => handleDelete(t.id)}
-                          className="p-1.5 rounded-lg text-[#E57373] hover:bg-[#E57373]/10 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleEdit(t)}
+                            className="p-1.5 rounded-lg text-[#9C9589] hover:text-[#ECDFCC] hover:bg-[#3C3D37]/50 cursor-pointer transition-colors"
+                            title="Editar Transação"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(t.id)}
+                            className="p-1.5 rounded-lg text-[#E57373] hover:bg-[#E57373]/10 cursor-pointer transition-colors"
+                            title="Excluir Transação"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -164,17 +187,21 @@ export const Transactions = () => {
 
       {/* Floating Action Button for Mobile */}
       <button
-        onClick={() => setShowCreateModal(true)}
+        onClick={() => {
+          setEditingTx(null);
+          setShowCreateModal(true);
+        }}
         className="md:hidden fixed bottom-[80px] right-4 w-14 h-14 bg-[#697565] text-[#ECDFCC] rounded-2xl shadow-xl flex items-center justify-center hover:bg-[#7A8674] transition-all z-30 shadow-[#697565]/30 cursor-pointer"
       >
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Modal de Criar Transacao Manual */}
+      {/* Modal de Criar/Editar Transacao */}
       <CreateTransactionModal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={handleCloseModal}
         onSuccess={load}
+        transactionToEdit={editingTx}
       />
     </div>
   );

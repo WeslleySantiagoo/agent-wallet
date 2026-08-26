@@ -24,6 +24,13 @@ def deleteTransaction(tx_id: int, db: Session = Depends(getDb)):
     if not success:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
 
+@router.put("/{tx_id}", response_model=TransactionResponse)
+def updateTransaction(tx_id: int, tx_in: TransactionCreate, db: Session = Depends(getDb)):
+    updated_tx = transaction_service.updateTransaction(db, tx_id, tx_in)
+    if not updated_tx:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    return updated_tx
+
 @router.get("/summary/dashboard", response_model=DashboardSummary)
 def getDashboardSummary(db: Session = Depends(getDb)):
     return transaction_service.getDashboardSummary(db)

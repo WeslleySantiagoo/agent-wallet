@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAccounts, getCreditCards, getCategories, createTransaction, createCategory } from '../../services/api';
+import { getAccounts, getCreditCards, getCategories, createTransaction, updateTransaction, createCategory } from '../../services/api';
 import { PillToggle } from '../common/PillToggle';
 import { CurrencyInput } from '../common/CurrencyInput';
 import { CustomDatePicker } from '../common/CustomDatePicker';
@@ -32,7 +32,7 @@ const ICON_MAP = {
   Sparkles
 };
 
-export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
+export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transactionToEdit = null }) => {
   const { toast } = useToast();
   const [txType, setTxType] = useState('EXPENSE'); // 'EXPENSE' ou 'INCOME'
   const [amount, setAmount] = useState(0);
@@ -75,7 +75,7 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
     if (isOpen) {
       loadFormData();
     }
-  }, [isOpen]);
+  }, [isOpen, transactionToEdit]);
 
   const loadFormData = async () => {
     setLoading(true);
@@ -89,21 +89,52 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
       setCards(cardsData || []);
       setCategories(catsData || []);
 
-      if (accsData && accsData.length > 0) {
-        setSelectedAccountId(accsData[0].id);
-      }
-      if (cardsData && cardsData.length > 0) {
-        setSelectedCardId(cardsData[0].id);
-      }
-      if (catsData && catsData.length > 0) {
-        // Encontrar categoria padrao
-        const firstSub = catsData.find(c => c.parent_id !== null);
-        const defaultCat = firstSub || catsData[0];
-        setSelectedCategoryId(defaultCat.id);
-        if (defaultCat.parent_id) {
-          setExpandedMacroId(defaultCat.parent_id);
-        } else {
-          setExpandedMacroId(catsData[0]?.id || null);
+      if (transactionToEdit) {
+        setTxType(transactionToEdit.type === 'INCOME' ? 'INCOME' : 'EXPENSE');
+        setAmount(transactionToEdit.amount || 0);
+        setDescription(transactionToEdit.description || '');
+        setDateStr(transactionToEdit.date ? transactionToEdit.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+        setPaymentMode(transactionToEdit.credit_card_id ? 'CARD' : 'ACCOUNT');
+        
+        if (transactionToEdit.account_id) setSelectedAccountId(transactionToEdit.account_id);
+        else if (accsData && accsData.length > 0) setSelectedAccountId(accsData[0].id);
+
+        if (transactionToEdit.credit_card_id) setSelectedCardId(transactionToEdit.credit_card_id);
+        else if (cardsData && cardsData.length > 0) setSelectedCardId(cardsData[0].id);
+
+        if (transactionToEdit.category_id) {
+          setSelectedCategoryId(transactionToEdit.category_id);
+          const foundCat = catsData?.find(c => c.id === transactionToEdit.category_id);
+          if (foundCat && foundCat.parent_id) {
+            setExpandedMacroId(foundCat.parent_id);
+          }
+        }
+        setIsInstallment(Boolean(transactionToEdit.is_installment));
+        setTotalInstallments(transactionToEdit.total_installments || 2);
+        setPaidInstallments(transactionToEdit.installment_number ? Math.max(0, transactionToEdit.installment_number - 1) : 0);
+      } else {
+        setTxType('EXPENSE');
+        setAmount(0);
+        setDescription('');
+        setDateStr(new Date().toISOString().split('T')[0]);
+        setPaymentMode('ACCOUNT');
+        setIsInstallment(false);
+
+        if (accsData && accsData.length > 0) {
+          setSelectedAccountId(accsData[0].id);
+        }
+        if (cardsData && cardsData.length > 0) {
+          setSelectedCardId(cardsData[0].id);
+        }
+        if (catsData && catsData.length > 0) {
+          const firstSub = catsData.find(c => c.parent_id !== null);
+          const defaultCat = firstSub || catsData[0];
+          setSelectedCategoryId(defaultCat.id);
+          if (defaultCat.parent_id) {
+            setExpandedMacroId(defaultCat.parent_id);
+          } else {
+            setExpandedMacroId(catsData[0]?.id || null);
+          }
         }
       }
     } catch (e) {
@@ -175,8 +206,13 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
         }
       }
 
-      await createTransaction(payload);
-      toast.success("Transação registrada com sucesso!");
+      if (transactionToEdit) {
+        await updateTransaction(transactionToEdit.id, payload);
+        toast.success("Transação atualizada com sucesso!");
+      } else {
+        await createTransaction(payload);
+        toast.success("Transação registrada com sucesso!");
+      }
       if (onSuccess) onSuccess();
       onClose();
 
@@ -185,7 +221,7 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
       setDescription('');
     } catch (err) {
       const errDetail = err.response?.data?.detail || err.message;
-      toast.error("Erro ao registrar transação: " + errDetail);
+      toast.error("Erro ao salvar transação: " + errDetail);
     } finally {
       setSubmitting(false);
     }
@@ -216,8 +252,12 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#3C3D37] p-6 pb-4">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-[#ECDFCC]">Nova Transação</h2>
-            <p className="text-xs text-[#9C9589]">Cadastre despesas ou receitas com categorias personalizadas</p>
+            <h2 className="text-base sm:text-lg font-bold text-[#ECDFCC]">
+              {transactionToEdit ? 'Editar Transação' : 'Nova Transação'}
+            </h2>
+            <p className="text-xs text-[#9C9589]">
+              {transactionToEdit ? 'Altere os dados do lançamento selecionado' : 'Cadastre despesas ou receitas com categorias personalizadas'}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -598,7 +638,7 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess }) => {
                 {submitting ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
-                  <span>Adicionar Transação</span>
+                  <span>{transactionToEdit ? 'Salvar Alterações' : 'Adicionar Transação'}</span>
                 )}
               </button>
             </div>
