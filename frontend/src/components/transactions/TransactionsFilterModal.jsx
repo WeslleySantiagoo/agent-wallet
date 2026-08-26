@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { getInstitutionLogo } from '../../utils/institutions';
+import { CustomDatePicker } from '../common/CustomDatePicker';
 
 export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], accounts = [], creditCards = [], currentFilters, onApply }) => {
   const [filters, setFilters] = useState(currentFilters || {
@@ -8,9 +9,22 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
     banks: [],
     cards: [],
     categories: [],
-    sortBy: 'Mais recentes'
+    sortBy: 'Mais recentes',
+    customStartDate: '',
+    customEndDate: ''
   });
   const [showMoreCategories, setShowMoreCategories] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -62,6 +76,25 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
                 </button>
               ))}
             </div>
+            
+            {filters.period === 'Personalizado' && (
+              <div className="mt-4 flex gap-4 animate-fadeIn">
+                <div className="flex-1">
+                  <label className="text-xs text-[#9C9589] font-semibold uppercase tracking-wider block mb-1.5">Data Inicial</label>
+                  <CustomDatePicker 
+                    value={filters.customStartDate} 
+                    onChange={(date) => setFilters({ ...filters, customStartDate: date })} 
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-[#9C9589] font-semibold uppercase tracking-wider block mb-1.5">Data Final</label>
+                  <CustomDatePicker 
+                    value={filters.customEndDate} 
+                    onChange={(date) => setFilters({ ...filters, customEndDate: date })} 
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bancos */}
@@ -201,7 +234,7 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
           <div className="text-center mt-4">
             <button 
               onClick={() => setFilters({
-                period: 'Mês atual', banks: [], cards: [], categories: [], sortBy: 'Mais recentes'
+                period: 'Mês atual', banks: [], cards: [], categories: [], sortBy: 'Mais recentes', customStartDate: '', customEndDate: ''
               })}
               className="text-xs text-[#9C9589] font-medium hover:text-white"
             >

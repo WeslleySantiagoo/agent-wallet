@@ -30,7 +30,9 @@ export const Transactions = () => {
     categories: [],
     sortBy: 'Mais recentes',
     origins: [],
-    showHidden: false
+    showHidden: false,
+    customStartDate: '',
+    customEndDate: ''
   });
 
   const loadData = async () => {
@@ -107,7 +109,7 @@ export const Transactions = () => {
       if (!activeFilters.categories.includes(tx.category_id)) return false;
     }
 
-    if (activeFilters.period && activeFilters.period !== 'Personalizado') {
+    if (activeFilters.period) {
       const txDateStr = tx.date.split('T')[0];
       const txParts = txDateStr.split('-');
       if (txParts.length === 3) {
@@ -115,21 +117,34 @@ export const Transactions = () => {
         const today = new Date();
         const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        const diffTime = todayLocal - txDate;
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        if (activeFilters.period === 'Personalizado') {
+          if (activeFilters.customStartDate) {
+            const startParts = activeFilters.customStartDate.split('-');
+            const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            if (txDate < startDate) return false;
+          }
+          if (activeFilters.customEndDate) {
+            const endParts = activeFilters.customEndDate.split('-');
+            const endDate = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+            if (txDate > endDate) return false;
+          }
+        } else {
+          const diffTime = todayLocal - txDate;
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        if (activeFilters.period === 'Hoje' && diffDays !== 0) return false;
-        if (activeFilters.period === 'Ontem' && diffDays !== 1) return false;
-        if (activeFilters.period === 'Últimos 7 dias' && (diffDays < 0 || diffDays > 7)) return false;
-        if (activeFilters.period === 'Últimos 15 dias' && (diffDays < 0 || diffDays > 15)) return false;
-        if (activeFilters.period === 'Mês atual' && (txDate.getMonth() !== todayLocal.getMonth() || txDate.getFullYear() !== todayLocal.getFullYear())) return false;
-        if (activeFilters.period === 'Mês passado') {
-          const lastMonth = new Date(todayLocal);
-          lastMonth.setMonth(lastMonth.getMonth() - 1);
-          if (txDate.getMonth() !== lastMonth.getMonth() || txDate.getFullYear() !== lastMonth.getFullYear()) return false;
+          if (activeFilters.period === 'Hoje' && diffDays !== 0) return false;
+          if (activeFilters.period === 'Ontem' && diffDays !== 1) return false;
+          if (activeFilters.period === 'Últimos 7 dias' && (diffDays < 0 || diffDays > 7)) return false;
+          if (activeFilters.period === 'Últimos 15 dias' && (diffDays < 0 || diffDays > 15)) return false;
+          if (activeFilters.period === 'Mês atual' && (txDate.getMonth() !== todayLocal.getMonth() || txDate.getFullYear() !== todayLocal.getFullYear())) return false;
+          if (activeFilters.period === 'Mês passado') {
+            const lastMonth = new Date(todayLocal);
+            lastMonth.setMonth(lastMonth.getMonth() - 1);
+            if (txDate.getMonth() !== lastMonth.getMonth() || txDate.getFullYear() !== lastMonth.getFullYear()) return false;
+          }
+          if (activeFilters.period === 'Este ano' && txDate.getFullYear() !== todayLocal.getFullYear()) return false;
+          if (activeFilters.period === 'Ano passado' && txDate.getFullYear() !== todayLocal.getFullYear() - 1) return false;
         }
-        if (activeFilters.period === 'Este ano' && txDate.getFullYear() !== todayLocal.getFullYear()) return false;
-        if (activeFilters.period === 'Ano passado' && txDate.getFullYear() !== todayLocal.getFullYear() - 1) return false;
       }
     }
     
