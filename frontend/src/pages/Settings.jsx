@@ -293,7 +293,6 @@ export const Settings = () => {
   };
 
   const handleResetDatabase = async () => {
-    if (confirmResetInput.trim().toUpperCase() !== 'RESETAR') return;
     if (selectedResetTargets.length === 0) {
       toast.error("Selecione pelo menos um módulo para resetar.");
       return;
@@ -331,8 +330,8 @@ export const Settings = () => {
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-[#ECDFCC]">Banco de Dados SQLite (Local-First)</h2>
-            <p className="text-xs text-[#9C9589]">Sem banco em nuvem comercial. Histórico, sessões e configurações salvos no seu .db</p>
+            <h2 className="text-sm font-bold text-[#ECDFCC]">Seus Dados</h2>
+            <p className="text-xs text-[#9C9589]">Seus lançamentos, conversas e configurações são salvos localmente no arquivo .db</p>
           </div>
         </div>
 
@@ -383,49 +382,6 @@ export const Settings = () => {
               </span>
               <input type="file" accept=".db" onChange={handleImportInputChange} className="hidden" />
             </label>
-          </div>
-
-          {/* Local Storage Backup Card */}
-          <div className="bg-[#181C14] p-5 rounded-xl border border-[#3C3D37] flex flex-col justify-between col-span-1 sm:col-span-2">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-[#ECDFCC]">Backup Automático no Navegador (Local Storage)</h3>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-[#697565]/20 text-[#697565] border border-[#697565]/30">
-                    Segurança Local
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#9C9589] mt-1">
-                  Guarda uma cópia de segurança do arquivo .db no Local Storage para recuperação sem perda de dados.
-                </p>
-                {localBackupInfo.hasBackup && (
-                  <p className="text-[10px] text-[#697565] font-mono mt-1">
-                    Último backup no navegador: {localBackupInfo.timestamp} ({localBackupInfo.sizeKB} KB)
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleSaveLocalBackup}
-                  disabled={savingLocalBackup}
-                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#3C3D37] hover:bg-[#4A4B44] text-[#ECDFCC] text-xs font-semibold border border-[#4A4B44] transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {savingLocalBackup ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  <span>Salvar Agora</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleRestoreLocalBackup}
-                  disabled={!localBackupInfo.hasBackup || restoringLocalBackup}
-                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#697565] hover:bg-[#7A8674] disabled:opacity-40 text-[#ECDFCC] text-xs font-semibold transition-colors cursor-pointer shadow-md"
-                >
-                  {restoringLocalBackup ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <HardDrive className="w-3.5 h-3.5" />}
-                  <span>Restaurar do Local Storage</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -810,19 +766,6 @@ export const Settings = () => {
                   );
                 })}
               </div>
-
-              <div className="space-y-2 bg-[#E57373]/10 p-3 rounded-xl border border-[#E57373]/20">
-                <label className="text-[11px] font-semibold text-[#ECDFCC] block">
-                  Para confirmar o reset dos itens selecionados, digite <span className="text-[#E57373] font-mono">RESETAR</span> abaixo:
-                </label>
-                <input
-                  type="text"
-                  value={confirmResetInput}
-                  onChange={(e) => setConfirmResetInput(e.target.value)}
-                  placeholder="RESETAR"
-                  className="w-full bg-[#181C14] border border-[#E57373]/40 rounded-xl px-3 py-2 text-xs text-[#ECDFCC] font-mono outline-none focus:border-[#E57373]"
-                />
-              </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#3C3D37] shrink-0">
@@ -835,7 +778,7 @@ export const Settings = () => {
               </button>
               <button
                 type="button"
-                disabled={confirmResetInput.trim().toUpperCase() !== 'RESETAR' || selectedResetTargets.length === 0 || resetting}
+                disabled={selectedResetTargets.length === 0 || resetting}
                 onClick={handleResetDatabase}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E57373] hover:bg-[#D32F2F] disabled:opacity-40 text-white text-xs font-semibold transition-colors shadow-lg cursor-pointer"
               >
