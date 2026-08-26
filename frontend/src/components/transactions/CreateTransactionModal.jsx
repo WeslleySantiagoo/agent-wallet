@@ -32,7 +32,7 @@ const ICON_MAP = {
   Sparkles
 };
 
-export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transactionToEdit = null }) => {
+export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transactionToEdit = null, onDelete = null }) => {
   const { toast } = useToast();
   const [txType, setTxType] = useState('EXPENSE'); // 'EXPENSE' ou 'INCOME'
   const [amount, setAmount] = useState(0);
@@ -654,27 +654,44 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#3C3D37]">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2.5 rounded-2xl text-xs text-[#9C9589] hover:bg-[#3C3D37] transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
-                  isIncome ? 'bg-[#4CAF50] hover:bg-[#43A047]' : 'bg-[#697565] hover:bg-[#7A8674]'
-                }`}
-              >
-                {submitting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span>{transactionToEdit ? 'Salvar Alterações' : 'Adicionar Transação'}</span>
+            <div className="flex items-center justify-between pt-3 border-t border-[#3C3D37]">
+              <div>
+                {transactionToEdit && onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Deseja realmente excluir esta transação?")) {
+                        onDelete(transactionToEdit.id);
+                      }
+                    }}
+                    className="px-4 py-2.5 rounded-2xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
+                    Excluir
+                  </button>
                 )}
-              </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2.5 rounded-2xl text-xs text-[#9C9589] hover:bg-[#3C3D37] transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
+                    isIncome ? 'bg-[#4CAF50] hover:bg-[#43A047]' : 'bg-[#697565] hover:bg-[#7A8674]'
+                  }`}
+                >
+                  {submitting ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>{transactionToEdit ? 'Salvar Alterações' : 'Adicionar Transação'}</span>
+                  )}
+                </button>
+              </div>
             </div>
 
           </form>

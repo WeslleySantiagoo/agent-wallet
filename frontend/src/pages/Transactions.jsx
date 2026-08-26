@@ -70,6 +70,19 @@ export const Transactions = () => {
     setEditingTx(null);
   };
 
+  const handleDeleteTransaction = async (id) => {
+    try {
+      await deleteTransaction(id);
+      toast.success("Transação excluída com sucesso.");
+      loadData();
+      setShowCreateModal(false);
+      setEditingTx(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao excluir transação.");
+    }
+  };
+
   const getCategory = (catId) => categories.find(c => c.id === catId);
   
   const getCategoryIcon = (iconName) => {
@@ -336,6 +349,7 @@ export const Transactions = () => {
         onClose={handleCloseModal}
         onSuccess={loadData}
         transactionToEdit={editingTx}
+        onDelete={handleDeleteTransaction}
       />
     </div>
   );
