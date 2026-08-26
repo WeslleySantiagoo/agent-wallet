@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, CreditCard } from 'lucide-react';
 import { getInstitutionLogo } from '../../utils/institutions';
+import { formatDisplayDate } from '../../utils/dateUtils';
 
 export const RecentTransactions = ({ transactions = [] }) => {
   if (!transactions || transactions.length === 0) {
@@ -63,7 +64,7 @@ export const RecentTransactions = ({ transactions = [] }) => {
                     </div>
                   </td>
 
-                  <td className="py-3 text-[#9C9589] font-mono text-[11px]">{new Date(tx.date).toLocaleDateString('pt-BR')}</td>
+                  <td className="py-3 text-[#9C9589] font-mono text-[11px]">{formatDisplayDate(tx.date)}</td>
 
                   <td className="py-3">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${

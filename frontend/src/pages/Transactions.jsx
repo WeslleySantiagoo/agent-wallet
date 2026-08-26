@@ -4,6 +4,7 @@ import { Receipt, Trash2, Pencil, ArrowUpRight, ArrowDownRight, CreditCard, Refr
 import { useAIChat } from '../context/AIChatContext';
 import { useToast } from '../context/ToastContext';
 import { getInstitutionLogo } from '../utils/institutions';
+import { formatDisplayDate } from '../utils/dateUtils';
 
 import { CreateTransactionModal } from '../components/transactions/CreateTransactionModal';
 
@@ -143,7 +144,7 @@ export const Transactions = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-[#9C9589] font-mono text-[11px]">
-                        {new Date(t.date).toLocaleDateString('pt-BR')}
+                        {formatDisplayDate(t.date)}
                       </td>
 
                       <td className="py-3.5 px-4">
