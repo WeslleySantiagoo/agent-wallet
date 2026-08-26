@@ -5,7 +5,7 @@ export const MonthlyExpenseCard = ({ totalExpenses = 0, categories = [] }) => {
   const hasCategories = categories && categories.length > 0;
 
   return (
-    <div className="card-glow p-4 sm:p-5 flex items-center justify-between min-h-[7rem] sm:h-44 border border-[#3C3D37]">
+    <div className="card-glow h-full p-4 sm:p-5 flex items-center justify-between min-h-[7rem] sm:h-44 border border-[#3C3D37]">
       <div className="flex flex-col justify-between h-full flex-1">
         <div>
           <span className="text-xs font-medium text-[#9C9589] uppercase tracking-wider">Gastos do Mês</span>

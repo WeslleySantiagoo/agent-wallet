@@ -5,7 +5,7 @@ export const CashFlowCard = ({ income = 0, expenses = 0 }) => {
   const net = income - expenses;
 
   return (
-    <div className="card-glow p-4 sm:p-5 flex flex-col justify-between min-h-[10rem] sm:h-44 border border-[#3C3D37]">
+    <div className="card-glow h-full p-4 sm:p-5 flex flex-col justify-between min-h-[10rem] sm:h-44 border border-[#3C3D37]">
       <div>
         <span className="text-xs font-medium text-[#9C9589] uppercase tracking-wider">Fluxo de Caixa Mês</span>
         <h3 className={`text-2xl font-bold mt-1 ${net >= 0 ? 'text-[#4CAF50]' : 'text-[#E57373]'}`}>
