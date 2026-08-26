@@ -61,6 +61,8 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
   const [totalInstallments, setTotalInstallments] = useState(2);
   const [paidInstallments, setPaidInstallments] = useState(0);
 
+  const [applyToNextInvoice, setApplyToNextInvoice] = useState(true);
+
   // Efeito para Scroll Lock no Body
   useEffect(() => {
     if (isOpen) {
@@ -192,7 +194,8 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
         category_id: selectedCategoryId ? parseInt(selectedCategoryId) : null,
         is_installment: isInstallment && paymentMode === 'CARD' && !isIncome,
         total_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? totalInstallments : 1,
-        paid_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? paidInstallments : 0
+        paid_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? paidInstallments : 0,
+        apply_to_next_invoice: (paymentMode === 'CARD' && cards.find(c => c.id === selectedCardId)?.closing_day === parseInt(dateStr?.split('-')[2], 10)) ? applyToNextInvoice : null
       };
 
       if (txType === 'INCOME') {
@@ -331,6 +334,37 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
                 value={dateStr}
                 onChange={(val) => setDateStr(val)}
               />
+              {!isIncome && paymentMode === 'CARD' && cards.find(c => c.id === selectedCardId)?.closing_day === parseInt(dateStr?.split('-')[2], 10) && (
+                <div className="mt-3 p-3 bg-[#697565]/20 border border-[#697565]/50 rounded-xl">
+                  <p className="text-xs text-[#ECDFCC] font-medium mb-2">
+                    Compra no dia de fechamento. Em qual fatura ela caiu?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setApplyToNextInvoice(false)}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                        applyToNextInvoice === false
+                          ? 'bg-[#697565] border-[#697565] text-[#ECDFCC]'
+                          : 'bg-[#181C14] border-[#3C3D37] text-[#9C9589] hover:border-[#697565]/40'
+                      }`}
+                    >
+                      Fatura Atual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApplyToNextInvoice(true)}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                        applyToNextInvoice === true
+                          ? 'bg-[#697565] border-[#697565] text-[#ECDFCC]'
+                          : 'bg-[#181C14] border-[#3C3D37] text-[#9C9589] hover:border-[#697565]/40'
+                      }`}
+                    >
+                      Próxima Fatura
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 5. Forma de Pagamento / Destino */}

@@ -56,7 +56,14 @@ def listCardInvoices(card_id: int, db: Session = Depends(getDb)):
 @router.post("/{card_id}/invoices/{invoice_id}/pay", response_model=InvoiceResponse)
 def payCardInvoice(card_id: int, invoice_id: int, req: PayInvoiceRequest, db: Session = Depends(getDb)):
     try:
-        invoice = credit_card_service.payInvoice(db, credit_card_id=card_id, invoice_id=invoice_id, account_id=req.account_id)
+        invoice = credit_card_service.payInvoice(
+            db, 
+            credit_card_id=card_id, 
+            invoice_id=invoice_id, 
+            account_id=req.account_id,
+            amount_paid=req.amount_paid,
+            payment_date=req.payment_date
+        )
         return invoice
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

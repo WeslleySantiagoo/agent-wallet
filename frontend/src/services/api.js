@@ -17,7 +17,7 @@ export const deleteAccount = (id) => api.delete(`/accounts/${id}`);
 export const getCreditCards = () => api.get('/credit-cards').then(res => res.data);
 export const createCreditCard = (data) => api.post('/credit-cards', data).then(res => res.data);
 export const getCardInvoices = (cardId) => api.get(`/credit-cards/${cardId}/invoices`).then(res => res.data);
-export const payInvoice = (cardId, invoiceId, accountId) => api.post(`/credit-cards/${cardId}/invoices/${invoiceId}/pay`, { account_id: accountId }).then(res => res.data);
+export const payInvoice = (cardId, invoiceId, data) => api.post(`/credit-cards/${cardId}/invoices/${invoiceId}/pay`, data).then(res => res.data);
 
 export const getTransactions = (limit = 100, offset = 0) => api.get(`/transactions?limit=${limit}&offset=${offset}`).then(res => res.data);
 export const createTransaction = (data) => api.post('/transactions', data).then(res => res.data);

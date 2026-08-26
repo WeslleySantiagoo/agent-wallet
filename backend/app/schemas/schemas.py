@@ -72,6 +72,8 @@ class InvoiceResponse(BaseModel):
 
 class PayInvoiceRequest(BaseModel):
     account_id: int
+    payment_date: Optional[PyDate] = None
+    amount_paid: Optional[float] = None
 
 # --- Category Schemas ---
 class CategoryBase(BaseModel):
@@ -103,6 +105,7 @@ class TransactionCreate(TransactionBase):
     is_installment: Optional[bool] = False
     total_installments: Optional[int] = 1
     paid_installments: Optional[int] = 0
+    apply_to_next_invoice: Optional[bool] = None
 
 class TransactionResponse(TransactionBase):
     id: int
