@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 export const CreditCardVisual = ({ card }) => {
   if (!card) {
     return (
-      <div className="card-glow h-full p-4 sm:p-5 min-h-[9rem] sm:h-44 flex flex-col justify-between bg-gradient-to-br from-[#3C3D37]/50 via-[#2A2E24]/50 to-[#181C14] border border-[#3C3D37] relative overflow-hidden">
+      <div className="card-glow p-4 sm:p-5 h-44 flex flex-col justify-between bg-gradient-to-br from-[#3C3D37]/50 via-[#2A2E24]/50 to-[#181C14] border border-[#3C3D37] relative overflow-hidden">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-semibold tracking-widest text-[#9C9589] uppercase">Cartão de Crédito</span>
           <CreditCard className="w-5 h-5 text-[#9C9589]" />
@@ -30,7 +30,7 @@ export const CreditCardVisual = ({ card }) => {
   const dueDay = card.due_day || 1;
 
   return (
-    <div className="card-glow h-full p-4 sm:p-5 min-h-[10rem] sm:h-44 flex flex-col justify-between bg-gradient-to-br from-[#3C3D37] via-[#2A2E24] to-[#181C14] border border-[#4A4B44] relative overflow-hidden group">
+    <div className="card-glow p-4 sm:p-5 h-44 flex flex-col justify-between bg-gradient-to-br from-[#3C3D37] via-[#2A2E24] to-[#181C14] border border-[#4A4B44] relative overflow-hidden group">
       {/* Top Card Bar */}
       <div className="flex items-start sm:items-center justify-between gap-2">
         <span className="text-xs font-semibold tracking-widest text-[#ECDFCC]/80 uppercase break-words flex-1 leading-tight">{cardName}</span>

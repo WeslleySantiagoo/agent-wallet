@@ -10,7 +10,7 @@ export const CreditLimitCard = ({ usedLimit = 0, totalLimit = 0 }) => {
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="card-glow h-full p-4 sm:p-5 flex items-center justify-between min-h-[9rem] sm:h-44 border border-[#3C3D37]">
+    <div className="card-glow p-4 sm:p-5 flex items-center justify-between h-44 border border-[#3C3D37]">
       <div className="flex flex-col justify-between h-full flex-1 min-w-0 mr-2">
         <div>
           <span className="text-xs font-medium text-[#9C9589] uppercase tracking-wider">Limite Disponível</span>

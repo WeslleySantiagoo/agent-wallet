@@ -50,7 +50,7 @@ export const BalanceCard = ({ totalBalance = 0, accountsCount = 0, dailyBalance6
   }, [dailyBalance60Days]);
 
   return (
-    <div className="card-glow h-full p-5 flex flex-col justify-between min-h-[9rem] sm:h-44 relative overflow-hidden group border border-[#3C3D37]">
+    <div className="card-glow p-5 flex flex-col justify-between h-44 relative overflow-hidden group border border-[#3C3D37]">
       <div className="relative z-10 pointer-events-none">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium text-[#9C9589] uppercase tracking-wider">Saldo Total em Contas</span>
