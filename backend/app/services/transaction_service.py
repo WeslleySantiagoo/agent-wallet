@@ -165,22 +165,43 @@ def getDashboardSummary(db: Session):
     # 4. Últimas 10 transações
     recent_transactions = db.query(Transaction).order_by(Transaction.date.desc(), Transaction.id.desc()).limit(10).all()
 
-    # 5. Gastos por Categoria no mês
-    cat_query = db.query(
-        Category.name,
-        Category.color,
-        func.sum(Transaction.amount).label("total")
-    ).join(Transaction, Transaction.category_id == Category.id)\
-     .filter(
+    # 5. Gastos por Macrocategoria no mês
+    monthly_expenses = db.query(Transaction).filter(
         extract('month', Transaction.date) == today.month,
         extract('year', Transaction.date) == today.year,
         Transaction.type.in_([TransactionType.EXPENSE, TransactionType.CARD_PURCHASE])
-    ).group_by(Category.id).all()
+    ).all()
 
-    categories_breakdown = [
-        {"name": row.name, "color": row.color or "#697565", "total": float(row.total)}
-        for row in cat_query
-    ]
+    all_categories = {c.id: c for c in db.query(Category).all()}
+    macro_totals = {}
+
+    for tx in monthly_expenses:
+        if not tx.category_id:
+            continue
+        cat = all_categories.get(tx.category_id)
+        if not cat:
+            continue
+        
+        macro_cat = all_categories.get(cat.parent_id) if cat.parent_id else cat
+        if not macro_cat:
+            macro_cat = cat
+
+        if macro_cat.id not in macro_totals:
+            macro_totals[macro_cat.id] = {
+                "name": macro_cat.name,
+                "color": macro_cat.color or "#697565",
+                "total": 0.0
+            }
+        macro_totals[macro_cat.id]["total"] += float(tx.amount)
+
+    categories_breakdown = sorted(
+        [
+            {"name": item["name"], "color": item["color"], "total": round(item["total"], 2)}
+            for item in macro_totals.values()
+        ],
+        key=lambda x: x["total"],
+        reverse=True
+    )
 
     # 6. Evolução Mensal Real (últimos 6 meses)
     monthly_evolution = []
