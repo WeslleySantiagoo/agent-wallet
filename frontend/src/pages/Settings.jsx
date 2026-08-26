@@ -293,7 +293,6 @@ export const Settings = () => {
   };
 
   const handleResetDatabase = async () => {
-    if (confirmResetInput.trim().toUpperCase() !== 'RESETAR') return;
     if (selectedResetTargets.length === 0) {
       toast.error("Selecione pelo menos um módulo para resetar.");
       return;
@@ -767,19 +766,6 @@ export const Settings = () => {
                   );
                 })}
               </div>
-
-              <div className="space-y-2 bg-[#E57373]/10 p-3 rounded-xl border border-[#E57373]/20">
-                <label className="text-[11px] font-semibold text-[#ECDFCC] block">
-                  Para confirmar o reset dos itens selecionados, digite <span className="text-[#E57373] font-mono">RESETAR</span> abaixo:
-                </label>
-                <input
-                  type="text"
-                  value={confirmResetInput}
-                  onChange={(e) => setConfirmResetInput(e.target.value)}
-                  placeholder="RESETAR"
-                  className="w-full bg-[#181C14] border border-[#E57373]/40 rounded-xl px-3 py-2 text-xs text-[#ECDFCC] font-mono outline-none focus:border-[#E57373]"
-                />
-              </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#3C3D37] shrink-0">
@@ -792,7 +778,7 @@ export const Settings = () => {
               </button>
               <button
                 type="button"
-                disabled={confirmResetInput.trim().toUpperCase() !== 'RESETAR' || selectedResetTargets.length === 0 || resetting}
+                disabled={selectedResetTargets.length === 0 || resetting}
                 onClick={handleResetDatabase}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E57373] hover:bg-[#D32F2F] disabled:opacity-40 text-white text-xs font-semibold transition-colors shadow-lg cursor-pointer"
               >
