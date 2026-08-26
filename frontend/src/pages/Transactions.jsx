@@ -20,6 +20,7 @@ export const Transactions = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTx, setEditingTx] = useState(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [quickFilter, setQuickFilter] = useState('');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState({
@@ -89,14 +90,54 @@ export const Transactions = () => {
   const isMatchingFilters = (tx) => {
     if (!isMatchingSearch(tx)) return false;
     
-    // Filtros rápidos simulados ou usar activeFilters
-    // ... Aqui poderiamos incluir a logica complexa do Filtro Modal
+    // Filtros Rápidos (Chips)
+    if (quickFilter === 'Entradas' && tx.type !== 'INCOME') return false;
+    if (quickFilter === 'Saídas' && tx.type !== 'EXPENSE') return false;
+    if (quickFilter === 'Pagamentos' && tx.type !== 'INVOICE_PAYMENT') return false;
+    if (quickFilter === 'Cartão' && tx.type !== 'CARD_PURCHASE') return false;
+
+    // Filtros Avançados (Modal)
+    if (activeFilters.banks && activeFilters.banks.length > 0) {
+      if (!activeFilters.banks.includes(tx.account_id)) return false;
+    }
+    if (activeFilters.cards && activeFilters.cards.length > 0) {
+      if (!activeFilters.cards.includes(tx.credit_card_id)) return false;
+    }
+    if (activeFilters.categories && activeFilters.categories.length > 0) {
+      if (!activeFilters.categories.includes(tx.category_id)) return false;
+    }
+
+    if (activeFilters.period && activeFilters.period !== 'Personalizado') {
+      const txDateStr = tx.date.split('T')[0];
+      const txParts = txDateStr.split('-');
+      if (txParts.length === 3) {
+        const txDate = new Date(txParts[0], txParts[1] - 1, txParts[2]);
+        const today = new Date();
+        const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        const diffTime = todayLocal - txDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (activeFilters.period === 'Hoje' && diffDays !== 0) return false;
+        if (activeFilters.period === 'Ontem' && diffDays !== 1) return false;
+        if (activeFilters.period === 'Últimos 7 dias' && (diffDays < 0 || diffDays > 7)) return false;
+        if (activeFilters.period === 'Últimos 15 dias' && (diffDays < 0 || diffDays > 15)) return false;
+        if (activeFilters.period === 'Mês atual' && (txDate.getMonth() !== todayLocal.getMonth() || txDate.getFullYear() !== todayLocal.getFullYear())) return false;
+        if (activeFilters.period === 'Mês passado') {
+          const lastMonth = new Date(todayLocal);
+          lastMonth.setMonth(lastMonth.getMonth() - 1);
+          if (txDate.getMonth() !== lastMonth.getMonth() || txDate.getFullYear() !== lastMonth.getFullYear()) return false;
+        }
+        if (activeFilters.period === 'Este ano' && txDate.getFullYear() !== todayLocal.getFullYear()) return false;
+        if (activeFilters.period === 'Ano passado' && txDate.getFullYear() !== todayLocal.getFullYear() - 1) return false;
+      }
+    }
     
     return true;
   };
 
   const handleQuickFilter = (type) => {
-    // Apenas UI visual por enquanto
+    setQuickFilter(prev => prev === type ? '' : type);
   };
 
   const groupedAndFilteredTxs = useMemo(() => {
@@ -134,7 +175,7 @@ export const Transactions = () => {
       }
       return new Date(b.dateStr) - new Date(a.dateStr);
     });
-  }, [txs, searchTerm, activeFilters, categories]);
+  }, [txs, searchTerm, activeFilters, quickFilter, categories]);
 
   return (
     <div className="space-y-6 pb-20">
@@ -183,7 +224,11 @@ export const Transactions = () => {
             <button 
               key={chip}
               onClick={() => handleQuickFilter(chip)}
-              className="px-4 py-2 rounded-full border border-[#3C3D37] bg-[#181C14] text-[#ECDFCC] text-xs font-medium hover:bg-[#3C3D37]/30 transition-colors whitespace-nowrap"
+              className={`px-4 py-2 rounded-full border text-xs font-medium transition-colors whitespace-nowrap ${
+                quickFilter === chip 
+                  ? 'bg-white text-black border-white'
+                  : 'border-[#3C3D37] bg-[#181C14] text-[#ECDFCC] hover:bg-[#3C3D37]/30'
+              }`}
             >
               {chip}
             </button>

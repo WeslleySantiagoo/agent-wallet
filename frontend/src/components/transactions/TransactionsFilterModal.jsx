@@ -8,9 +8,7 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
     banks: [],
     cards: [],
     categories: [],
-    sortBy: 'Mais recentes',
-    origins: [],
-    showHidden: false
+    sortBy: 'Mais recentes'
   });
   const [showMoreCategories, setShowMoreCategories] = useState(false);
 
@@ -35,8 +33,8 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
   const displayedCategories = showMoreCategories ? categories : categories.slice(0, 8);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end justify-center z-50">
-      <div className="bg-[#181C14] border-t border-[#3C3D37] rounded-t-3xl w-full max-w-md max-h-[90vh] flex flex-col animate-slide-up pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-[#181C14] border border-[#3C3D37] rounded-3xl w-full max-w-md shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-[#3C3D37]">
           <h2 className="text-xl font-medium text-white">Filtros</h2>
           <button onClick={onClose} className="p-2 rounded-full bg-[#3C3D37]/50 text-[#9C9589] hover:text-white transition-colors">
@@ -191,43 +189,6 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
             </div>
           </div>
 
-          {/* Origem */}
-          <div>
-            <h3 className="text-sm text-[#9C9589] font-medium mb-3">Origem</h3>
-            <div className="flex flex-wrap gap-2">
-              {origins.map(o => {
-                const isSelected = filters.origins.includes(o);
-                return (
-                  <button
-                    key={o}
-                    onClick={() => setFilters({ ...filters, origins: toggleArrayItem(filters.origins, o) })}
-                    className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${
-                      isSelected 
-                        ? 'bg-white text-black border-white' 
-                        : 'bg-[#181C14] text-[#9C9589] border-[#3C3D37] hover:bg-[#3C3D37]/30'
-                    }`}
-                  >
-                    {o}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Mostrar ocultos */}
-          <div className="flex items-center justify-between pt-2">
-            <div>
-              <h3 className="text-sm text-[#ECDFCC] font-medium">Mostrar ocultos</h3>
-              <p className="text-[10px] text-[#9C9589]">Exibe transações ocultadas no extrato.</p>
-            </div>
-            <button 
-              onClick={() => setFilters({ ...filters, showHidden: !filters.showHidden })}
-              className={`w-10 h-6 rounded-full relative transition-colors ${filters.showHidden ? 'bg-white' : 'bg-[#3C3D37]'}`}
-            >
-              <div className={`w-4 h-4 rounded-full bg-black absolute top-1 transition-all ${filters.showHidden ? 'left-5' : 'left-1'}`} />
-            </button>
-          </div>
-          
         </div>
 
         <div className="p-5 border-t border-[#3C3D37] bg-[#181C14]">
@@ -240,7 +201,7 @@ export const TransactionsFilterModal = ({ isOpen, onClose, categories = [], acco
           <div className="text-center mt-4">
             <button 
               onClick={() => setFilters({
-                period: 'Mês atual', banks: [], cards: [], categories: [], sortBy: 'Mais recentes', origins: [], showHidden: false
+                period: 'Mês atual', banks: [], cards: [], categories: [], sortBy: 'Mais recentes'
               })}
               className="text-xs text-[#9C9589] font-medium hover:text-white"
             >
