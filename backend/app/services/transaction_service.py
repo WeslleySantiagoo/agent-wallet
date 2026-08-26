@@ -56,9 +56,69 @@ def deleteTransaction(db: Session, tx_id: int):
             elif tx.type in [TransactionType.EXPENSE, TransactionType.TRANSFER]:
                 account.balance += tx.amount
 
+    if tx.credit_card_id:
+        card = db.query(CreditCard).filter(CreditCard.id == tx.credit_card_id).first()
+        if card:
+            card.used_limit = max(0.0, card.used_limit - tx.amount)
+
     db.delete(tx)
     db.commit()
     return True
+
+def updateTransaction(db: Session, tx_id: int, tx_in: TransactionCreate):
+    tx = db.query(Transaction).filter(Transaction.id == tx_id).first()
+    if not tx:
+        return None
+
+    # Reverter impacto antigo na conta
+    if tx.account_id:
+        old_acc = db.query(Account).filter(Account.id == tx.account_id).first()
+        if old_acc:
+            if tx.type == TransactionType.INCOME:
+                old_acc.balance -= tx.amount
+            elif tx.type in [TransactionType.EXPENSE, TransactionType.TRANSFER]:
+                old_acc.balance += tx.amount
+
+    # Reverter impacto antigo no cartão
+    if tx.credit_card_id:
+        old_card = db.query(CreditCard).filter(CreditCard.id == tx.credit_card_id).first()
+        if old_card:
+            old_card.used_limit = max(0.0, old_card.used_limit - tx.amount)
+
+    # Determinar novos tipos e IDs
+    new_type = tx_in.type
+    new_card_id = tx_in.credit_card_id
+    new_acc_id = tx_in.account_id
+
+    if new_type == TransactionType.CARD_PURCHASE or new_card_id is not None:
+        new_type = TransactionType.CARD_PURCHASE
+
+    tx.description = tx_in.description
+    tx.amount = tx_in.amount
+    tx.type = new_type
+    tx.date = tx_in.date or tx.date
+    tx.category_id = tx_in.category_id
+    tx.account_id = new_acc_id
+    tx.credit_card_id = new_card_id
+
+    # Aplicar novo impacto na conta
+    if tx.account_id:
+        new_acc = db.query(Account).filter(Account.id == tx.account_id).first()
+        if new_acc:
+            if tx.type == TransactionType.INCOME:
+                new_acc.balance += tx.amount
+            elif tx.type in [TransactionType.EXPENSE, TransactionType.TRANSFER]:
+                new_acc.balance -= tx.amount
+
+    # Aplicar novo impacto no cartão
+    if tx.credit_card_id:
+        new_card = db.query(CreditCard).filter(CreditCard.id == tx.credit_card_id).first()
+        if new_card:
+            new_card.used_limit += tx.amount
+
+    db.commit()
+    db.refresh(tx)
+    return tx
 
 def getDashboardSummary(db: Session):
     today = date.today()
@@ -105,22 +165,43 @@ def getDashboardSummary(db: Session):
     # 4. Últimas 10 transações
     recent_transactions = db.query(Transaction).order_by(Transaction.date.desc(), Transaction.id.desc()).limit(10).all()
 
-    # 5. Gastos por Categoria no mês
-    cat_query = db.query(
-        Category.name,
-        Category.color,
-        func.sum(Transaction.amount).label("total")
-    ).join(Transaction, Transaction.category_id == Category.id)\
-     .filter(
+    # 5. Gastos por Macrocategoria no mês
+    monthly_expenses = db.query(Transaction).filter(
         extract('month', Transaction.date) == today.month,
         extract('year', Transaction.date) == today.year,
         Transaction.type.in_([TransactionType.EXPENSE, TransactionType.CARD_PURCHASE])
-    ).group_by(Category.id).all()
+    ).all()
 
-    categories_breakdown = [
-        {"name": row.name, "color": row.color or "#697565", "total": float(row.total)}
-        for row in cat_query
-    ]
+    all_categories = {c.id: c for c in db.query(Category).all()}
+    macro_totals = {}
+
+    for tx in monthly_expenses:
+        if not tx.category_id:
+            continue
+        cat = all_categories.get(tx.category_id)
+        if not cat:
+            continue
+        
+        macro_cat = all_categories.get(cat.parent_id) if cat.parent_id else cat
+        if not macro_cat:
+            macro_cat = cat
+
+        if macro_cat.id not in macro_totals:
+            macro_totals[macro_cat.id] = {
+                "name": macro_cat.name,
+                "color": macro_cat.color or "#697565",
+                "total": 0.0
+            }
+        macro_totals[macro_cat.id]["total"] += float(tx.amount)
+
+    categories_breakdown = sorted(
+        [
+            {"name": item["name"], "color": item["color"], "total": round(item["total"], 2)}
+            for item in macro_totals.values()
+        ],
+        key=lambda x: x["total"],
+        reverse=True
+    )
 
     # 6. Evolução Mensal Real (últimos 6 meses)
     monthly_evolution = []
