@@ -199,16 +199,26 @@ async def processChat(req: ChatRequest, db: Session = Depends(getDb)):
     )
     db.add(bot_msg)
     
-    session.updated_at = db.query(ChatSession).first().updated_at  # Força atualização do timestamp
+    session.updated_at = datetime.utcnow()
     db.commit()
 
     return response
+
+@router.delete("/usage", status_code=status.HTTP_200_OK)
+def clearUsageStats(db: Session = Depends(getDb)):
+    db.query(AIUsage).delete()
+    db.commit()
+    return {"status": "success", "message": "Estatísticas de uso da IA resetadas com sucesso."}
 
 @router.get("/usage", response_model=AIUsageSummary)
 def getUsageStats(db: Session = Depends(getDb)):
     # Total history
     total_reqs = db.query(AIUsage).count()
     total_toks = db.query(func.sum(AIUsage.total_tokens)).scalar() or 0
+    total_in_toks = db.query(func.sum(AIUsage.input_tokens)).scalar() or 0
+    total_out_toks = db.query(func.sum(AIUsage.output_tokens)).scalar() or 0
+
+    total_cost = (total_in_toks * 0.00000015) + (total_out_toks * 0.0000006)
 
     # Last 24 hours
     yesterday = datetime.utcnow() - timedelta(days=1)
@@ -242,13 +252,20 @@ def getUsageStats(db: Session = Depends(getDb)):
         model_rpm = m.requests / total_minutes
         model_tpm = (m.total_tokens or 0) / total_minutes
         model_rpd = m.requests / total_days
+        in_tok = m.input_tokens or 0
+        out_tok = m.output_tokens or 0
+        m_cost = (in_tok * 0.00000015) + (out_tok * 0.0000006)
+
         model_details.append(AIUsageModelDetails(
             provider=m.provider,
             model=m.model,
+            model_name=m.model,
             requests=m.requests,
-            input_tokens=m.input_tokens or 0,
-            output_tokens=m.output_tokens or 0,
+            calls=m.requests,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
             total_tokens=m.total_tokens or 0,
+            estimated_cost_usd=round(m_cost, 6),
             rpm=round(model_rpm, 2),
             tpm=round(model_tpm, 2),
             rpd=round(model_rpd, 2)
@@ -256,8 +273,12 @@ def getUsageStats(db: Session = Depends(getDb)):
 
     return AIUsageSummary(
         total_requests=total_reqs,
+        total_calls=total_reqs,
         total_requests_today=reqs_today,
         total_tokens=total_toks,
+        total_input_tokens=total_in_toks,
+        total_output_tokens=total_out_toks,
+        total_estimated_cost_usd=round(total_cost, 6),
         global_rpm=round(global_rpm, 2),
         global_tpm=round(global_tpm, 2),
         global_rpd=round(global_rpd, 2),

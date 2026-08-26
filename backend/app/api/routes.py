@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.database import engine, Base, getDb
-from app.db.models import Transaction, CreditCard, Invoice, Account, Category, ChatMessage, ChatSession
+from app.db.models import Transaction, CreditCard, Invoice, Account, Category, ChatMessage, ChatSession, AIUsage
 from app.api.categories import seed_categories_if_needed
 
 router = APIRouter(tags=["Database Import/Export"])
@@ -90,10 +90,11 @@ def resetDatabase(options: Optional[ResetOptions] = None, db: Session = Depends(
             db.commit()
             seed_categories_if_needed(db)
 
-        # 5. Seletivo de Histórico do Chat de IA
+        # 5. Seletivo de Histórico do Chat de IA e Tabela de Consumo
         if "chat_history" in targets:
             db.query(ChatMessage).delete()
             db.query(ChatSession).delete()
+            db.query(AIUsage).delete()
 
         db.commit()
         return {"status": "success", "message": "Dados selecionados foram resetados com sucesso."}

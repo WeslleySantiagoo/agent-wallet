@@ -165,18 +165,25 @@ class ChatSessionResponse(BaseModel):
 class AIUsageModelDetails(BaseModel):
     provider: str
     model: str
+    model_name: str
     requests: int
+    calls: int
     input_tokens: int
     output_tokens: int
     total_tokens: int
+    estimated_cost_usd: float
     rpm: float
     tpm: float
     rpd: float
 
 class AIUsageSummary(BaseModel):
     total_requests: int
+    total_calls: int
     total_requests_today: int
     total_tokens: int
+    total_input_tokens: int
+    total_output_tokens: int
+    total_estimated_cost_usd: float
     global_rpm: float
     global_tpm: float
     global_rpd: float
