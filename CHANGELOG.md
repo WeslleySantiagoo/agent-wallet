@@ -1,3 +1,19 @@
+# [1.1.0](https://github.com/WeslleySantiagoo/agent-wallet/compare/v1.0.0...v1.1.0) (2026-08-27)
+
+
+### Bug Fixes
+
+* restaurar cards do dashboard e ajustar responsividade mobile ([2157239](https://github.com/WeslleySantiagoo/agent-wallet/commit/21572392436731a27d3323356e973a0f7137fcd1))
+
+
+### Features
+
+* add custom date range filter functionality to transactions modal and list view ([88fa23f](https://github.com/WeslleySantiagoo/agent-wallet/commit/88fa23fc73a9b82b603a568e644ccf3be8915371))
+* add invoice payment modal with customizable amounts and dates, and support for explicit invoice selection for transactions on closing days ([71a2f63](https://github.com/WeslleySantiagoo/agent-wallet/commit/71a2f63a21e7aac5a688322d56083e78e6133d0e))
+* add transaction deletion support to CreateTransactionModal ([f0899ea](https://github.com/WeslleySantiagoo/agent-wallet/commit/f0899eaea2149211471c554e9be46213046902ad))
+* implement transaction filtering logic and update filter modal UI ([f7464a8](https://github.com/WeslleySantiagoo/agent-wallet/commit/f7464a877a5011a80c7964c8aaa31e38bf3f9759))
+* implement transactions filter modal with category, account, and period selection support ([99264bb](https://github.com/WeslleySantiagoo/agent-wallet/commit/99264bb00c1d098e1c4104338793447f8f0398f4))
+
 # 1.0.0 (2026-08-26)
 
 
