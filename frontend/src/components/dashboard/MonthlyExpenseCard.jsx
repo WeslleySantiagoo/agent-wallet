@@ -31,7 +31,7 @@ export const MonthlyExpenseCard = ({ totalExpenses = 0, categories = [] }) => {
 
       {/* Mini Donut Chart */}
       {hasCategories && (
-        <div className="w-16 h-16 sm:w-20 sm:h-20 relative shrink-0 ml-2 pointer-events-none">
+        <div className="h-full aspect-square relative shrink-0 ml-2 pointer-events-none">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
