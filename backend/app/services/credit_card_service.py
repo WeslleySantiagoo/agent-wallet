@@ -5,10 +5,11 @@ from sqlalchemy.orm import Session
 from app.db.models import CreditCard, Invoice, InvoiceStatus, Transaction, TransactionType, Account
 from app.schemas.schemas import CreditCardCreate, TransactionCreate
 
-def getOrCreateInvoice(db: Session, credit_card_id: int, target_date: date) -> Invoice:
+def getOrCreateInvoice(db: Session, credit_card_id: int, target_date: date, apply_to_next_invoice: bool = None) -> Invoice:
     """
     Encontra ou cria a fatura para uma determinada data de transação no cartão.
-    Lógica de fechamento: se o dia da transação é maior que o closing_day, pertence à fatura do próximo mês.
+    Lógica de fechamento: se o dia da transação é maior que o closing_day, pertence à fatura do próximo mês,
+    a menos que apply_to_next_invoice force o comportamento.
     """
     card = db.query(CreditCard).filter(CreditCard.id == credit_card_id).first()
     if not card:
@@ -17,11 +18,19 @@ def getOrCreateInvoice(db: Session, credit_card_id: int, target_date: date) -> I
     month = target_date.month
     year = target_date.year
 
-    if target_date.day > card.closing_day:
+    if apply_to_next_invoice is True:
         month += 1
         if month > 12:
             month = 1
             year += 1
+    elif apply_to_next_invoice is False:
+        pass
+    else:
+        if target_date.day > card.closing_day:
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
 
     invoice = db.query(Invoice).filter(
         Invoice.credit_card_id == credit_card_id,
@@ -65,9 +74,18 @@ def processCardPurchase(db: Session, tx_data: TransactionCreate) -> List[Transac
     created_transactions = []
     base_date = tx_data.date or date.today()
 
+    initial_month_offset = 0
+    if tx_data.apply_to_next_invoice is True:
+        initial_month_offset = 1
+    elif tx_data.apply_to_next_invoice is False:
+        initial_month_offset = 0
+    else:
+        if base_date.day > card.closing_day:
+            initial_month_offset = 1
+
     for i in range(paid_installments, total_installments):
         # Calcular mês de cada parcela, começando no mês base (offset = 0 para a primeira não paga)
-        offset = i - paid_installments
+        offset = i - paid_installments + initial_month_offset
         current_month = base_date.month + offset
         current_year = base_date.year + (current_month - 1) // 12
         actual_month = ((current_month - 1) % 12) + 1
@@ -76,7 +94,7 @@ def processCardPurchase(db: Session, tx_data: TransactionCreate) -> List[Transac
         day = min(base_date.day, 28)
         parcel_date = date(current_year, actual_month, day)
 
-        invoice = getOrCreateInvoice(db, card.id, parcel_date)
+        invoice = getOrCreateInvoice(db, card.id, parcel_date, apply_to_next_invoice=False)
         invoice.total_amount += installment_amount
 
         desc = tx_data.description
@@ -104,11 +122,11 @@ def processCardPurchase(db: Session, tx_data: TransactionCreate) -> List[Transac
         db.refresh(tx)
     return created_transactions
 
-def payInvoice(db: Session, credit_card_id: int, invoice_id: int, account_id: int) -> Invoice:
+def payInvoice(db: Session, credit_card_id: int, invoice_id: int, account_id: int, amount_paid: float = None, payment_date: date = None) -> Invoice:
     """
     Paga uma fatura do cartão:
-    1. Debita o valor total da fatura da conta selecionada.
-    2. Libera o limite do cartão referente a essa fatura.
+    1. Debita o valor pago da conta selecionada.
+    2. Libera o limite do cartão referente ao valor pago (limitado ao valor da fatura).
     3. Marca a fatura como PAID.
     """
     invoice = db.query(Invoice).filter(
@@ -126,12 +144,16 @@ def payInvoice(db: Session, credit_card_id: int, invoice_id: int, account_id: in
         raise ValueError("Conta bancária para pagamento não encontrada")
 
     card = db.query(CreditCard).filter(CreditCard.id == credit_card_id).first()
+    
+    actual_amount_paid = amount_paid if amount_paid is not None else invoice.total_amount
+    actual_payment_date = payment_date if payment_date is not None else date.today()
 
     # 1. Debita saldo da conta
-    account.balance -= invoice.total_amount
+    account.balance -= actual_amount_paid
 
-    # 2. Libera limite no cartão
-    card.used_limit = max(0.0, card.used_limit - invoice.total_amount)
+    # 2. Libera limite no cartão (limitado ao valor total da fatura para não gerar limite extra indevido)
+    limit_to_restore = min(actual_amount_paid, invoice.total_amount)
+    card.used_limit = max(0.0, card.used_limit - limit_to_restore)
 
     # 3. Atualiza fatura
     invoice.status = InvoiceStatus.PAID
@@ -140,10 +162,10 @@ def payInvoice(db: Session, credit_card_id: int, invoice_id: int, account_id: in
     # 4. Registra transação de saída na conta referente ao pagamento da fatura
     tx_payment = Transaction(
         account_id=account.id,
-        amount=invoice.total_amount,
+        amount=actual_amount_paid,
         description=f"Pagamento Fatura {card.name} ({invoice.month}/{invoice.year})",
         type=TransactionType.EXPENSE,
-        date=date.today()
+        date=actual_payment_date
     )
     db.add(tx_payment)
 

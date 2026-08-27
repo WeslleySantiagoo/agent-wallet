@@ -5,7 +5,7 @@ export const CashFlowCard = ({ income = 0, expenses = 0 }) => {
   const net = income - expenses;
 
   return (
-    <div className="card-glow p-5 flex flex-col justify-between h-44 border border-[#3C3D37]">
+    <div className="card-glow p-4 sm:p-5 flex flex-col justify-between h-44 border border-[#3C3D37]">
       <div>
         <span className="text-xs font-medium text-[#9C9589] uppercase tracking-wider">Fluxo de Caixa Mês</span>
         <h3 className={`text-2xl font-bold mt-1 ${net >= 0 ? 'text-[#4CAF50]' : 'text-[#E57373]'}`}>
@@ -14,9 +14,9 @@ export const CashFlowCard = ({ income = 0, expenses = 0 }) => {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs flex-wrap gap-x-2 gap-y-1">
           <span className="flex items-center gap-1 text-[#4CAF50]">
-            <ArrowUpRight className="w-3.5 h-3.5" /> Receitas
+            <ArrowUpRight className="w-3.5 h-3.5 shrink-0" /> Receitas
           </span>
           <span className="font-semibold text-[#ECDFCC]">R$ {income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
         </div>
@@ -24,9 +24,9 @@ export const CashFlowCard = ({ income = 0, expenses = 0 }) => {
           <div className="bg-[#4CAF50] h-full rounded-full" style={{ width: `${Math.min(100, (income / (income + expenses || 1)) * 100)}%` }} />
         </div>
 
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs flex-wrap gap-x-2 gap-y-1">
           <span className="flex items-center gap-1 text-[#E57373]">
-            <ArrowDownRight className="w-3.5 h-3.5" /> Despesas
+            <ArrowDownRight className="w-3.5 h-3.5 shrink-0" /> Despesas
           </span>
           <span className="font-semibold text-[#ECDFCC]">R$ {expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
         </div>

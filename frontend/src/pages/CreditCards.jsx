@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { getCreditCards, createCreditCard, getAccounts, payInvoice } from '../services/api';
+import { getCreditCards, createCreditCard, getAccounts } from '../services/api';
 import { Plus, CreditCard as CardIcon, Calendar, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { CurrencyInput } from '../components/common/CurrencyInput';
 import { CustomSelect } from '../components/common/CustomSelect';
 import { CustomNumberInput } from '../components/common/CustomNumberInput';
+import { PayInvoiceModal } from '../components/transactions/PayInvoiceModal';
 
 export const CreditCards = () => {
   const { toast } = useToast();
@@ -12,6 +13,8 @@ export const CreditCards = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showPayInvoiceModal, setShowPayInvoiceModal] = useState(false);
+  const [selectedCardForPayment, setSelectedCardForPayment] = useState(null);
   const [form, setForm] = useState({
     account_id: '',
     name: '',
@@ -59,20 +62,9 @@ export const CreditCards = () => {
     }
   };
 
-  const handlePayInvoice = async (cardId) => {
-    if (accounts.length === 0) {
-      toast.error("Cadastre uma conta corrente primeiro para pagar a fatura.");
-      return;
-    }
-    const accId = accounts[0].id;
-
-    try {
-      await payInvoice(cardId, 1, parseInt(accId));
-      toast.success("Fatura paga com sucesso! Saldo debitado e limite liberado.");
-      loadData();
-    } catch (e) {
-      toast.error("Status do pagamento: " + (e.response?.data?.detail || e.message));
-    }
+  const handlePayInvoice = (cardId) => {
+    setSelectedCardForPayment(cardId);
+    setShowPayInvoiceModal(true);
   };
 
   return (
@@ -236,6 +228,17 @@ export const CreditCards = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Pagamento de Fatura */}
+      <PayInvoiceModal
+        isOpen={showPayInvoiceModal}
+        onClose={() => {
+          setShowPayInvoiceModal(false);
+          setSelectedCardForPayment(null);
+        }}
+        onSuccess={loadData}
+        cardId={selectedCardForPayment}
+      />
     </div>
   );
 };

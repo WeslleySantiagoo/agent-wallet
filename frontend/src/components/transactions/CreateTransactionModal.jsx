@@ -32,7 +32,7 @@ const ICON_MAP = {
   Sparkles
 };
 
-export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transactionToEdit = null }) => {
+export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transactionToEdit = null, onDelete = null }) => {
   const { toast } = useToast();
   const [txType, setTxType] = useState('EXPENSE'); // 'EXPENSE' ou 'INCOME'
   const [amount, setAmount] = useState(0);
@@ -60,6 +60,8 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
   const [isInstallment, setIsInstallment] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState(2);
   const [paidInstallments, setPaidInstallments] = useState(0);
+
+  const [applyToNextInvoice, setApplyToNextInvoice] = useState(true);
 
   // Efeito para Scroll Lock no Body
   useEffect(() => {
@@ -192,7 +194,8 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
         category_id: selectedCategoryId ? parseInt(selectedCategoryId) : null,
         is_installment: isInstallment && paymentMode === 'CARD' && !isIncome,
         total_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? totalInstallments : 1,
-        paid_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? paidInstallments : 0
+        paid_installments: isInstallment && paymentMode === 'CARD' && !isIncome ? paidInstallments : 0,
+        apply_to_next_invoice: (paymentMode === 'CARD' && cards.find(c => c.id === selectedCardId)?.closing_day === parseInt(dateStr?.split('-')[2], 10)) ? applyToNextInvoice : null
       };
 
       if (txType === 'INCOME') {
@@ -331,6 +334,37 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
                 value={dateStr}
                 onChange={(val) => setDateStr(val)}
               />
+              {!isIncome && paymentMode === 'CARD' && cards.find(c => c.id === selectedCardId)?.closing_day === parseInt(dateStr?.split('-')[2], 10) && (
+                <div className="mt-3 p-3 bg-[#697565]/20 border border-[#697565]/50 rounded-xl">
+                  <p className="text-xs text-[#ECDFCC] font-medium mb-2">
+                    Compra no dia de fechamento. Em qual fatura ela caiu?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setApplyToNextInvoice(false)}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                        applyToNextInvoice === false
+                          ? 'bg-[#697565] border-[#697565] text-[#ECDFCC]'
+                          : 'bg-[#181C14] border-[#3C3D37] text-[#9C9589] hover:border-[#697565]/40'
+                      }`}
+                    >
+                      Fatura Atual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApplyToNextInvoice(true)}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                        applyToNextInvoice === true
+                          ? 'bg-[#697565] border-[#697565] text-[#ECDFCC]'
+                          : 'bg-[#181C14] border-[#3C3D37] text-[#9C9589] hover:border-[#697565]/40'
+                      }`}
+                    >
+                      Próxima Fatura
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 5. Forma de Pagamento / Destino */}
@@ -620,27 +654,44 @@ export const CreateTransactionModal = ({ isOpen, onClose, onSuccess, transaction
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#3C3D37]">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2.5 rounded-2xl text-xs text-[#9C9589] hover:bg-[#3C3D37] transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
-                  isIncome ? 'bg-[#4CAF50] hover:bg-[#43A047]' : 'bg-[#697565] hover:bg-[#7A8674]'
-                }`}
-              >
-                {submitting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span>{transactionToEdit ? 'Salvar Alterações' : 'Adicionar Transação'}</span>
+            <div className="flex items-center justify-between pt-3 border-t border-[#3C3D37]">
+              <div>
+                {transactionToEdit && onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Deseja realmente excluir esta transação?")) {
+                        onDelete(transactionToEdit.id);
+                      }
+                    }}
+                    className="px-4 py-2.5 rounded-2xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
+                    Excluir
+                  </button>
                 )}
-              </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2.5 rounded-2xl text-xs text-[#9C9589] hover:bg-[#3C3D37] transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
+                    isIncome ? 'bg-[#4CAF50] hover:bg-[#43A047]' : 'bg-[#697565] hover:bg-[#7A8674]'
+                  }`}
+                >
+                  {submitting ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>{transactionToEdit ? 'Salvar Alterações' : 'Adicionar Transação'}</span>
+                  )}
+                </button>
+              </div>
             </div>
 
           </form>
